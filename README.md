@@ -1,140 +1,61 @@
 # ScarletCarrier
 
-A modular .NET template for creating V Rising mods with optional dependencies.
+**ScarletCarrier** is a V Rising mod that adds a servant carrier system to help transport your items. The mod provides a convenient way to summon a personal servant that can carry items, with automatic inventory persistence between summons.
 
-## 🚀 Quick Start
+---
 
-### Installation
+## Support & Donations
 
-Install the template from NuGet:
+<a href="https://www.patreon.com/bePatron?u=30093731" data-patreon-widget-type="become-patron-button"><img height='36' style='border:0px;height:36px;' src='https://i.imgur.com/o12xEqi.png' alt='Become a Patron' /></a>  <a href='https://ko-fi.com/F2F21EWEM7' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' alt='Buy Me a Coffee at ko-fi.com' /></a>
 
-```bash
-dotnet new install ScarletCarrier
-```
+---
 
-### Usage
+## How It Works
 
-Create a new V Rising mod project:
+When you summon a carrier, your personal servant appears and can store items in its inventory. After 60 seconds, the servant automatically despawns, but all items are saved and will be restored when you summon your carrier again.
 
-```bash
-# Basic mod with ScarletCore only
-dotnet new scarletcarrier -n MyMod
+## Features
 
-# With VampireCommandFramework support
-dotnet new scarletcarrier -n MyMod --use_vcf
+* Summon a servant that can carry items
+* 60-second duration with manual dismiss option  
+* Automatic inventory persistence between summons
+* Interactive dialogue system
+* Simple command interface
 
-# With ScarletRCON soft integration
-dotnet new scarletcarrier -n MyMod --use_vcf --use_rcon_soft
+## Upcoming Features
 
-# With ScarletRCON full integration
-dotnet new scarletcarrier -n MyMod --use_vcf --use_rcon_hard
-```
+* Following the player (maybe or maybe not)
 
-## 📦 What's Included
+## Commands
 
-### Core Dependencies (Always Included)
-- **ScarletCore**: Core framework for V Rising mods
-- **BepInEx**: Mod framework for Unity games
-- **VRising.Unhollowed.Client**: V Rising game bindings
+* `.carrier call` - Summons your carrier servant
+* `.carrier dismiss` - Dismisses your carrier early
 
-### Optional Dependencies
-- **VampireCommandFramework** (`--use_vcf`): Command system for in-game commands
-- **ScarletRCON** (`--use_rcon_soft` / `--use_rcon_hard`): Remote console integration
+## Installation
 
-## 🛠️ Template Options
+### Requirements
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--use_vcf` | Include VampireCommandFramework dependency | `false` |
-| `--use_rcon_soft` | Include ScarletRCON with soft integration | `false` |
-| `--use_rcon_hard` | Include ScarletRCON with full integration | `false` |
+This mod requires the following dependencies:
 
-## 📁 Generated Project Structure
+* **[BepInEx](https://wiki.vrisingmods.com/user/bepinex_install.html)**
+* **[ScarletCore](https://thunderstore.io/c/v-rising/p/ScarletMods/ScarletCore/)**
+* **[VampireCommandFramework](https://thunderstore.io/c/v-rising/p/deca/VampireCommandFramework/)**
 
-```
-MyMod/
-├── MyMod.csproj           # Project file with conditional dependencies
-├── MyMod.sln              # Solution file
-├── Plugin.cs              # Main plugin class with conditional code
-├── MyPluginInfo.cs        # Auto-generated plugin metadata
-├── nuget.config           # NuGet sources (BepInEx, Samboy Feed)
-└── LICENSE                # MIT License
-```
+Make sure BepInEx is installed and loaded **before** installing ScarletCarrier.
 
-## 💡 Examples
+### Manual Installation
 
-### Basic Plugin
-```csharp
-[BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
-[BepInDependency("markvaaz.ScarletCore")]
-public class Plugin : BasePlugin
-{
-    public override void Load()
-    {
-        Log.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} loaded!");
-    }
-}
-```
+1. Download the latest release of **ScarletCarrier**.
 
-### With VCF Commands (when `--use_vcf` is used)
-```csharp
-[CommandGroup("mymod")]
-public class MyCommands
-{
-    [Command("hello", "Say hello")]
-    public static void HelloCommand(CommandContext context)
-    {
-        context.Reply("Hello from my mod!");
-    }
-}
-```
+2. Extract the contents into your `BepInEx/plugins` folder:
 
-### With RCON Support (when `--use_rcon_*` is used)
-```csharp
-[RconCommandCategory("mymod")]
-public class MyRconCommands
-{
-    [RconCommand("status", "Get mod status")]
-    public static string StatusCommand()
-    {
-        return "Mod is running!";
-    }
-}
-```
+   `<V Rising Server Directory>/BepInEx/plugins/`
 
-## 🔧 Development
+   Your folder should now include:
 
-### Prerequisites
-- .NET 6.0 SDK or later
-- V Rising Dedicated Server (for testing)
+   `BepInEx/plugins/ScarletCarrier.dll`
 
-### Building
-```bash
-dotnet build
-```
+3. Ensure **ScarletCore** and **VampireCommandFramework** are also installed in the `plugins` folder.
+4. Start or restart your server.
 
-### Installation Path
-The template automatically copies built mods to:
-```
-C:\Program Files (x86)\Steam\steamapps\common\VRisingDedicatedServer\BepInEx\plugins
-```
-
-## 📋 Requirements
-
-- .NET 6.0+
-- V Rising Dedicated Server
-- BepInEx 6.0+
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-## 🔗 Links
-
-- [V Rising](https://store.steampowered.com/app/1604030/V_Rising/)
-- [BepInEx](https://github.com/BepInEx/BepInEx)
-- [VampireCommandFramework](https://github.com/decaprime/VampireCommandFramework)
-- [ScarletCore](https://github.com/markvaaz/ScarletCore)
+## Join the [modding community on Discord](https://vrisingmods.com/discord).
