@@ -10,7 +10,7 @@ public static class TestCommands {
 
   [Command("call", shortHand: "c")]
   public static void SummonCommand(ChatCommandContext ctx) {
-    if (!PlayerService.TryGetByName(ctx.User.CharacterName.ToString(), out var playerData)) {
+    if (!PlayerService.TryGetById(ctx.User.PlatformId, out var playerData)) {
       ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
     }
 
@@ -23,7 +23,7 @@ public static class TestCommands {
 
   [Command("dismiss", shortHand: "d")]
   public static void DismissCommand(ChatCommandContext ctx) {
-    if (!PlayerService.TryGetByName(ctx.User.CharacterName.ToString(), out var playerData)) {
+    if (!PlayerService.TryGetById(ctx.User.PlatformId, out var playerData)) {
       ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
     }
 
