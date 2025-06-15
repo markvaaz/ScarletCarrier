@@ -98,6 +98,7 @@ internal static class CarrierService {
 
     AfterSpawnScript(coffin, servant, playerData);
   }
+
   private static void ConfigureCoffinServantConnection(Entity coffin, Entity servant, PlayerData playerData) {
     servant.AddWith((ref ServantConnectedCoffin servantConnectedCoffin) => {
       servantConnectedCoffin.CoffinEntity = coffin;
@@ -188,9 +189,9 @@ internal static class CarrierService {
       .Then(() => RunDialogSequence(coffin, playerData))
       .ThenWait(MaxDuration - 8f)
       .Then(() => PrepareToLeave(coffin))
-      .ThenWait(2)
+      .ThenWait(2f)
       .Then(() => EndPhase(coffin, servant))
-      .ThenWait(2)
+      .ThenWait(2f)
       .Then(() => RemoveServant(servant))
       .Execute();
 
