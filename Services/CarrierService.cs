@@ -35,11 +35,17 @@ internal static class CarrierService {
     new(-1527408583)
   ];
 
-  private static readonly string[] DialogLines = [
-    "Hi I'm your carrier.",
-    "You can give me your items to store them.",
-    "Once you are done, please dismiss me."
+  private static readonly string[] GreetingsDialogLines = [
+    "Hey there {playerName}!",
+    "I'm here to help carry your stuff.",
+    "Just hand me whatever you need to store.",
+    "Give me the word when you're ready for me to go!"
   ];
+
+  private const string PreparingToLeaveDialog = "All right, I'm about to head out.";
+  private const string FarewellDialog = "See you later!";
+  private const string CarrierNameFormat = "{playerName}'s Carrier";
+
   public static void Spawn(PlayerData playerData) {
     if (_spawnedServants.ContainsKey(playerData.PlatformId)) {
       return;
@@ -81,12 +87,12 @@ internal static class CarrierService {
     TeleportService.TeleportToPosition(coffin, new float3(position.x, 200, position.z));
 
     coffin.SetTeam(playerData.CharacterEntity);
+
     ConfigureCoffinServantConnection(coffin, servant, playerData);
     RemoveDisableComponents(coffin);
 
     AfterSpawnScript(coffin, servant, playerData);
   }
-
   private static void ConfigureCoffinServantConnection(Entity coffin, Entity servant, PlayerData playerData) {
     servant.AddWith((ref ServantConnectedCoffin servantConnectedCoffin) => {
       servantConnectedCoffin.CoffinEntity = coffin;
@@ -94,9 +100,10 @@ internal static class CarrierService {
 
     coffin.AddWith((ref ServantCoffinstation coffinStation) => {
       coffinStation.ConnectedServant._Entity = servant;
-      coffinStation.ServantName = new FixedString64Bytes($"{playerData.Name}'s Carrier");
       coffinStation.State = ServantCoffinState.ServantAlive;
     });
+
+    SetCarrierName(coffin, playerData.Name);
   }
 
   private static void RemoveDisableComponents(Entity entity) {
@@ -188,38 +195,33 @@ internal static class CarrierService {
       InventoryService.AddItem(servant, new(item.Key), item.Value);
     }
   }
-
   private static void RunDialogSequence(Entity coffin, PlayerData playerData) {
     var index = 0;
 
     var action = ActionScheduler.Repeating(() => {
-      coffin.With((ref ServantCoffinstation coffinStation) => {
-        if (index == DialogLines.Length) {
-          coffinStation.ServantName = new FixedString64Bytes($"{playerData.Name}'s Carrier");
-        } else {
-          coffinStation.ServantName = new FixedString64Bytes(DialogLines[index]);
-        }
-      });
+      if (index == GreetingsDialogLines.Length) {
+        SetCarrierName(coffin, playerData.Name);
+      } else {
+        SetDialog(coffin, GreetingsDialogLines[index].Replace("{playerName}", playerData.Name));
+      }
 
       index++;
-    }, DialogInterval, DialogLines.Length + 1);
+    }, DialogInterval, GreetingsDialogLines.Length + 1);
 
     AddAction(playerData, action);
   }
   private static void PrepareToLeave(Entity coffin) {
     if (Entity.Null.Equals(coffin)) return;
 
-    coffin.With((ref ServantCoffinstation coffinStation) => {
-      coffinStation.ServantName = new FixedString64Bytes("All right, I'm about to head out.");
-    });
+    SetDialog(coffin, PreparingToLeaveDialog);
   }
 
   private static void EndPhase(Entity coffin, Entity servant) {
     if (Entity.Null.Equals(coffin) || Entity.Null.Equals(servant)) return;
 
     CleanupServant(servant);
-    UpdateCoffinFarewell(coffin);
-    PlayDespawnEffects(servant);
+    SetDialog(coffin, FarewellDialog);
+    PlayPreDespawnEffects(servant);
   }
 
   private static void CleanupServant(Entity servant) {
@@ -231,13 +233,17 @@ internal static class CarrierService {
     });
   }
 
-  private static void UpdateCoffinFarewell(Entity coffin) {
+  private static void SetDialog(Entity coffin, string message) {
     coffin.With((ref ServantCoffinstation coffinStation) => {
-      coffinStation.ServantName = new FixedString64Bytes("See you later!");
+      coffinStation.ServantName = new FixedString64Bytes(message);
     });
   }
 
-  private static void PlayDespawnEffects(Entity servant) {
+  private static void SetCarrierName(Entity coffin, string playerName) {
+    SetDialog(coffin, CarrierNameFormat.Replace("{playerName}", playerName));
+  }
+
+  private static void PlayPreDespawnEffects(Entity servant) {
     BuffService.TryApplyBuff(servant, DespawnVisualBuff);
     CastAbilityOnServant(servant, DespawnAbility);
   }
