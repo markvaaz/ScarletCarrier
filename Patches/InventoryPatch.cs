@@ -6,6 +6,7 @@ using ScarletCore.Data;
 using ScarletCore.Services;
 using Unity.Collections;
 using Unity.Entities;
+using ScarletCore;
 
 namespace ScarletCarrier.Patches;
 

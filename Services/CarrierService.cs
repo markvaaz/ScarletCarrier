@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using ProjectM;
 using ProjectM.Network;
+using ScarletCore;
 using ScarletCore.Data;
 using ScarletCore.Services;
 using ScarletCore.Systems;
