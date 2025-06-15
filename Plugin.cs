@@ -5,11 +5,8 @@ using HarmonyLib;
 using ScarletCore.Data;
 using VampireCommandFramework;
 using ScarletRCON.Shared;
-using ScarletCore.Systems;
-using ProjectM;
-using Unity.Entities;
-using ScarletCore.Services;
 using ScarletCore.Events;
+using ScarletCarrier.Services;
 
 namespace ScarletCarrier;
 
@@ -35,7 +32,7 @@ public class Plugin : BasePlugin {
     _harmony.PatchAll(System.Reflection.Assembly.GetExecutingAssembly());
 
     EventManager.OnInitialize += (_, _) => {
-      ClearServants();
+      CarrierService.ClearServants();
     };
 
     Settings = new Settings(MyPluginInfo.PLUGIN_GUID, Instance);
@@ -46,7 +43,6 @@ public class Plugin : BasePlugin {
 
   public override bool Unload() {
     _harmony?.UnpatchSelf();
-    TestCommands.Unload();
     CommandRegistry.UnregisterAssembly();
     RconCommandRegistrar.UnregisterAssembly();
     return true;
@@ -59,19 +55,6 @@ public class Plugin : BasePlugin {
   public static void LoadSettings() {
     Settings.Section("General")
       .Add("Enable", true, "Enable or disable the plugin");
-  }
-
-  public static void ClearServants() {
-    var servants = GameSystems.EntityManager.CreateEntityQuery(
-      ComponentType.ReadOnly<ServantData>(),
-      ComponentType.ReadOnly<Follower>()
-    );
-
-    foreach (var servant in servants.ToEntityArray(Unity.Collections.Allocator.Temp)) {
-      servant.Remove<Follower>();
-      InventoryService.ClearInventory(servant);
-      servant.Destroy();
-    }
   }
 
   /*
