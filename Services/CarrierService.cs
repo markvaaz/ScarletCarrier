@@ -31,7 +31,7 @@ internal static class CarrierService {
 
   private static readonly PrefabGUID[] ServantPermaBuffs = [
     new(-480024072), // Invulnerable Buff
-    new(1934061152), // Disable aggro
+    new(1934061152) // Disable aggro
   ];
 
   private static readonly Dictionary<PrefabGUID, float> ServantTempBuffs = new() {
@@ -228,15 +228,12 @@ internal static class CarrierService {
   private static void EndPhase(Entity coffin, Entity servant) {
     if (Entity.Null.Equals(coffin) || Entity.Null.Equals(servant)) return;
 
-    CleanupServant(servant);
+    DisableInteraction(servant);
     SetDialog(coffin, FarewellDialog);
     PlayPreDespawnEffects(servant);
   }
 
-  private static void CleanupServant(Entity servant) {
-    servant.Remove<Follower>();
-    InventoryService.ClearInventory(servant);
-
+  private static void DisableInteraction(Entity servant) {
     servant.With((ref Interactable interactable) => {
       interactable.Disabled = true;
     });
@@ -281,9 +278,10 @@ internal static class CarrierService {
 
     var userEntity = servant.Read<Follower>().Followed._Value;
 
+    servant.Remove<Follower>();
+
     _spawnedServants.Remove(userEntity.Read<User>().PlatformId);
 
-    servant.Remove<Follower>();
     InventoryService.ClearInventory(servant);
     servant.Destroy();
   }

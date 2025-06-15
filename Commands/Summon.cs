@@ -8,7 +8,7 @@ namespace ScarletCarrier.Commands;
 [CommandGroup("carrier")]
 public static class TestCommands {
 
-  [Command("summon")]
+  [Command("call")]
   public static void SummonCommand(ChatCommandContext ctx) {
     if (!PlayerService.TryGetByName(ctx.User.CharacterName.ToString(), out var playerData)) {
       ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
