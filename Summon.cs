@@ -1,20 +1,5 @@
-using System;
-using System.Collections.Generic;
-using ProjectM;
-using ProjectM.Network;
-using ScarletCore.Data;
-using ScarletCore.Events;
 using ScarletCore.Services;
-using ScarletCore.Utils;
-using ScarletCore.Systems;
 using ScarletRCON.Shared;
-using Stunlock.Core;
-using Unity.Collections;
-using Unity.Entities;
-using Unity.Mathematics;
-using Unity.Transforms;
-using ProjectM.UI;
-using ProjectM.Behaviours;
 using ScarletCarrier.Services;
 
 namespace ScarletCarrier;
