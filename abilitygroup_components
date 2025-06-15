@@ -1,0 +1,31 @@
+[Info   :ScarletCore] ProjectM.Attach
+[Info   :ScarletCore] ProjectM.EntityOwner
+[Info   :ScarletCore] ProjectM.EntityCreator
+[Info   :ScarletCore] ProjectM.AbilityGroupState
+[Info   :ScarletCore] ProjectM.AbilityGroupResetComboState
+[Info   :ScarletCore] ProjectM.DestroyData
+[Info   :ScarletCore] ProjectM.DestroyState
+[Info   :ScarletCore] ProjectM.StoredPowerStats
+[Info   :ScarletCore] ProjectM.AbilityGroupInfo
+[Info   :ScarletCore] ProjectM.Network.Networked
+[Info   :ScarletCore] ProjectM.Network.UpToDateUserBitMask
+[Info   :ScarletCore] ProjectM.Network.SyncToUserBitMask
+[Info   :ScarletCore] ProjectM.Network.FrameChanged
+[Info   :ScarletCore] ProjectM.Network.NetworkSnapshot
+[Info   :ScarletCore] ProjectM.Network.NetworkId
+[Info   :ScarletCore] Stunlock.Core.PrefabGUID
+[Info   :ScarletCore] ProjectM.Attached
+[Info   :ScarletCore] ProjectM.AbilityStateBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.Network.SyncToUserBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.Network.Snapshot_AbilityStateBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.AbilityCastCondition [Buffer]
+[Info   :ScarletCore] ProjectM.AbilityGroupStartAbilitiesBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.Network.NetSnapshot [Buffer]
+[Info   :ScarletCore] ProjectM.Network.SnapshotFrameChangedBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.AbilityGroupComboActive
+[Info   :ScarletCore] ProjectM.PreventDisableWhenNoPlayersInRange
+[Info   :ScarletCore] ProjectM.Network.OnlySyncToUsersTag
+[Info   :ScarletCore] Unity.Entities.Simulate
+[Info   :ScarletCore] Unity.Entities.BlobAssetOwner
+[Info   :ScarletCore] ProjectM.AttachedDepth
+[Info   :ScarletCore] ProjectM.Network.NetworkSnapshotType

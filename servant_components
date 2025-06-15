@@ -1,0 +1,158 @@
+[Info   :ScarletCore] ProjectM.ServantConnectedCoffin
+[Info   :ScarletCore] ProjectM.UnitSpawnHandler
+[Info   :ScarletCore] ProjectM.IdleInteractor
+[Info   :ScarletCore] ProjectM.AbilityBar_Server
+[Info   :ScarletCore] ProjectM.AbilityBar_Shared
+[Info   :ScarletCore] ProjectM.AggroConsumer
+[Info   :ScarletCore] ProjectM.Follower
+[Info   :ScarletCore] ProjectM.EntityOwner
+[Info   :ScarletCore] ProjectM.EntityCreator
+[Info   :ScarletCore] ProjectM.BuffResistances
+[Info   :ScarletCore] ProjectM.ServantEquipment
+[Info   :ScarletCore] ProjectM.EntityInput
+[Info   :ScarletCore] ProjectM.AiMove_Server
+[Info   :ScarletCore] ProjectM.Behaviours.BehaviourTreeInstance
+[Info   :ScarletCore] ProjectM.Pathfinding.LastPathRequest
+[Info   :ScarletCore] Animation.SkinColorCollectionComponent
+[Info   :ScarletCore] ProjectM.CastleAreaRequirement
+[Info   :ScarletCore] ProjectM.CastOptionsUser
+[Info   :ScarletCore] ProjectM.ServantTypeData
+[Info   :ScarletCore] ProjectM.NPCServantColorIndex
+[Info   :ScarletCore] ProjectM.ServantHasItemsInInventory
+[Info   :ScarletCore] ProjectM.Interactable
+[Info   :ScarletCore] ProjectM.InteractedUpon
+[Info   :ScarletCore] ProjectM.DynamicCollision
+[Info   :ScarletCore] ProjectM.Height
+[Info   :ScarletCore] ProjectM.AoETargetImportance
+[Info   :ScarletCore] ProjectM.Torture
+[Info   :ScarletCore] ProjectM.YieldEssenceOnDeath
+[Info   :ScarletCore] ProjectM.OpenDoors
+[Info   :ScarletCore] ProjectM.IsSpellControlled
+[Info   :ScarletCore] ProjectM.ServantConvertable
+[Info   :ScarletCore] ProjectM.Network.NetworkInterpolated_Shared
+[Info   :ScarletCore] ProjectM.AbilityBarInitializationState
+[Info   :ScarletCore] ProjectM.Aggroable
+[Info   :ScarletCore] ProjectM.GainAggroByAlert
+[Info   :ScarletCore] ProjectM.GainAggroByVicinity
+[Info   :ScarletCore] ProjectM.GainAlertByVicinity
+[Info   :ScarletCore] ProjectM.AggroModifiers
+[Info   :ScarletCore] ProjectM.AlertModifiers
+[Info   :ScarletCore] ProjectM.AggroDamageHistoryConfig
+[Info   :ScarletCore] ProjectM.AiPrioritization_Data
+[Info   :ScarletCore] ProjectM.AiPrioritization_State
+[Info   :ScarletCore] ProjectM.AiMoveSpeeds
+[Info   :ScarletCore] ProjectM.CastHistoryData
+[Info   :ScarletCore] ProjectM.FactionReference
+[Info   :ScarletCore] ProjectM.PlacementDestroyData
+[Info   :ScarletCore] ProjectM.DestroyData
+[Info   :ScarletCore] ProjectM.DestroyState
+[Info   :ScarletCore] ProjectM.Age
+[Info   :ScarletCore] ProjectM.Buffable
+[Info   :ScarletCore] ProjectM.Hideable
+[Info   :ScarletCore] ProjectM.LifeTime
+[Info   :ScarletCore] ProjectM.ServantData
+[Info   :ScarletCore] ProjectM.Stealthable
+[Info   :ScarletCore] ProjectM.Health
+[Info   :ScarletCore] ProjectM.HealthConstants
+[Info   :ScarletCore] ProjectM.DynamicallyWeakenAttackers
+[Info   :ScarletCore] ProjectM.InventoryOwner
+[Info   :ScarletCore] ProjectM.LastTranslation
+[Info   :ScarletCore] ProjectM.Movement
+[Info   :ScarletCore] ProjectM.CollisionRadius
+[Info   :ScarletCore] ProjectM.MapCollision
+[Info   :ScarletCore] ProjectM.Velocity
+[Info   :ScarletCore] ProjectM.SpawnTransform
+[Info   :ScarletCore] ProjectM.TargetDirection
+[Info   :ScarletCore] ProjectM.Team
+[Info   :ScarletCore] ProjectM.TileBounds
+[Info   :ScarletCore] ProjectM.TileModelSpatialData
+[Info   :ScarletCore] ProjectM.TileData
+[Info   :ScarletCore] ProjectM.UnitRespawnTime
+[Info   :ScarletCore] ProjectM.BuffableFlagState
+[Info   :ScarletCore] ProjectM.EntityCategory
+[Info   :ScarletCore] ProjectM.ServantPower
+[Info   :ScarletCore] ProjectM.ServantPowerConstants
+[Info   :ScarletCore] ProjectM.ApplyBuffOnSpawn
+[Info   :ScarletCore] ProjectM.UnitLevel
+[Info   :ScarletCore] ProjectM.UnitLevelServerData
+[Info   :ScarletCore] ProjectM.Vision
+[Info   :ScarletCore] ProjectM.EntityAimData
+[Info   :ScarletCore] ProjectM.MoveVelocity
+[Info   :ScarletCore] ProjectM.ResistanceData
+[Info   :ScarletCore] ProjectM.UnitStats
+[Info   :ScarletCore] ProjectM.AiMove_Shared
+[Info   :ScarletCore] ProjectM.UnitSpawnData
+[Info   :ScarletCore] ProjectM.GenericCombatMovementData
+[Info   :ScarletCore] ProjectM.MiscAiGameplayData
+[Info   :ScarletCore] ProjectM.IsMinion
+[Info   :ScarletCore] ProjectM.Sequencer.ImpactMaterial
+[Info   :ScarletCore] ProjectM.Network.Networked
+[Info   :ScarletCore] ProjectM.Network.NetworkedTimeout
+[Info   :ScarletCore] ProjectM.Network.UpToDateUserBitMask
+[Info   :ScarletCore] ProjectM.Network.FrameChanged
+[Info   :ScarletCore] ProjectM.Network.NetworkSnapshot
+[Info   :ScarletCore] ProjectM.Behaviours.BehaviourTreeBinding
+[Info   :ScarletCore] ProjectM.Behaviours.BehaviourTreeState
+[Info   :ScarletCore] ProjectM.Behaviours.BehaviourTreeStateMetadata
+[Info   :ScarletCore] ProjectM.Tiles.TileModel
+[Info   :ScarletCore] ProjectM.Hybrid.HybridModelSeed
+[Info   :ScarletCore] ProjectM.Hybrid.DeathRagdollForce
+[Info   :ScarletCore] Unity.Transforms.Rotation
+[Info   :ScarletCore] Unity.Transforms.Translation
+[Info   :ScarletCore] Unity.Physics.PhysicsCollider
+[Info   :ScarletCore] Unity.Physics.Systems.StaticPhysicsWorldBodyIndex
+[Info   :ScarletCore] ProjectM.AiDebugDraw
+[Info   :ScarletCore] ProjectM.Pathfinding.Pathfinder
+[Info   :ScarletCore] Unity.Transforms.LocalToWorld
+[Info   :ScarletCore] Unity.Transforms.LocalTransform
+[Info   :ScarletCore] ProjectM.TeamReference
+[Info   :ScarletCore] ProjectM.TilePosition
+[Info   :ScarletCore] ProjectM.Network.NetworkId
+[Info   :ScarletCore] Stunlock.Core.PrefabGUID
+[Info   :ScarletCore] ProjectM.OpenDoorsBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.AggroBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.AlertBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.AggroCandidateBufferElement [Buffer]
+[Info   :ScarletCore] ProjectM.AggroDamageHistoryBufferElement [Buffer]
+[Info   :ScarletCore] ProjectM.ExternalAggroBufferElement [Buffer]
+[Info   :ScarletCore] ProjectM.AbilityGroupSlotBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.BuffBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.InventoryInstanceElement [Buffer]
+[Info   :ScarletCore] ProjectM.EntitiesInView_Server [Buffer]
+[Info   :ScarletCore] ProjectM.Behaviours.BehaviourTreeStateActiveBuffsBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.PerksBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.ServantConvertRequirement [Buffer]
+[Info   :ScarletCore] ProjectM.InteractAbilityBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.CreateGameplayEventsOnSpawn [Buffer]
+[Info   :ScarletCore] ProjectM.ApplyBuffOnGameplayEvent [Buffer]
+[Info   :ScarletCore] ProjectM.GameplayEventIdMapping [Buffer]
+[Info   :ScarletCore] ProjectM.UnitLevelDamageSettings [Buffer]
+[Info   :ScarletCore] ProjectM.Network.Snapshot_InventoryInstanceElement [Buffer]
+[Info   :ScarletCore] ProjectM.Network.Snapshot_PerksBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.CastHistoryBufferElement [Buffer]
+[Info   :ScarletCore] ProjectM.SpawnBuffElement [Buffer]
+[Info   :ScarletCore] ProjectM.GameplayEventListeners [Buffer]
+[Info   :ScarletCore] ProjectM.Network.NetSnapshot [Buffer]
+[Info   :ScarletCore] ProjectM.Network.SnapshotFrameChangedBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.Behaviours.BehaviourTreeStateBuffsBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.Behaviours.BehaviourTreeNodeInstanceElement [Buffer]
+[Info   :ScarletCore] ProjectM.Pathfinding.PathBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.Pathfinding.PathRequestFilledSegmentBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.Pathfinding.PathRequestSolveDebugBuffer [Buffer]
+[Info   :ScarletCore] ProjectM.Pathfinding.UnsmoothedPathBuffer [Buffer]
+[Info   :ScarletCore] Stunlock.Sequencer.BlackboardElement [Buffer]
+[Info   :ScarletCore] ProjectM.MoveStopTrigger
+[Info   :ScarletCore] ProjectM.SnapToHeight
+[Info   :ScarletCore] ProjectM.HideOutsideVision
+[Info   :ScarletCore] ProjectM.MoveEntity
+[Info   :ScarletCore] ProjectM.TilePlacementTag
+[Info   :ScarletCore] ProjectM.DisableWhenNoPlayersInRange
+[Info   :ScarletCore] ProjectM.Shared.DropTable
+[Info   :ScarletCore] Unity.Entities.SpawnTag
+[Info   :ScarletCore] Unity.Entities.Disabled
+[Info   :ScarletCore] Unity.Entities.Simulate
+[Info   :ScarletCore] Unity.Entities.BlobAssetOwner
+[Info   :ScarletCore] ProjectM.TileModelRegistrationState
+[Info   :ScarletCore] ProjectM.Network.NetworkSnapshotType
+[Info   :ScarletCore] ProjectM.Tiles.TileModelLayer
+[Info   :ScarletCore] Unity.Physics.PhysicsWorldIndex
