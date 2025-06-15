@@ -4,7 +4,6 @@ using BepInEx.Unity.IL2CPP;
 using HarmonyLib;
 using ScarletCore.Data;
 using VampireCommandFramework;
-using ScarletRCON.Shared;
 using ScarletCore.Events;
 using ScarletCarrier.Services;
 
@@ -38,13 +37,11 @@ public class Plugin : BasePlugin {
     Settings = new Settings(MyPluginInfo.PLUGIN_GUID, Instance);
     Database = new Database(MyPluginInfo.PLUGIN_GUID);
     CommandRegistry.RegisterAll();
-    RconCommandRegistrar.RegisterAll();
   }
 
   public override bool Unload() {
     _harmony?.UnpatchSelf();
     CommandRegistry.UnregisterAssembly();
-    RconCommandRegistrar.UnregisterAssembly();
     return true;
   }
 

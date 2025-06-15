@@ -29,11 +29,15 @@ internal static class CarrierService {
   private const float TeleportDistance = 3f;
   private const float DialogInterval = 2f;
 
-  private static readonly PrefabGUID[] ServantBuffs = [
-    new(-480024072),
-    new(1934061152),
-    new(-1527408583)
+  private static readonly PrefabGUID[] ServantPermaBuffs = [
+    new(-480024072), // Invulnerable Buff
+    new(1934061152), // Disable aggro
   ];
+
+  private static readonly Dictionary<PrefabGUID, float> ServantTempBuffs = new() {
+    { new PrefabGUID(-1855386239), 0.2f }, // Blood
+    { new PrefabGUID(-2061378836), 3f } // Heart explosion
+  };
 
   private static readonly string[] GreetingsDialogLines = [
     "Hey there {playerName}!",
@@ -126,11 +130,13 @@ internal static class CarrierService {
   }
 
   private static void ApplyServantBuffs(Entity servant) {
-    foreach (var buffGuid in ServantBuffs) {
-      BuffService.TryApplyBuff(servant, buffGuid);
+    foreach (var permaBuffGuid in ServantPermaBuffs) {
+      BuffService.TryApplyBuff(servant, permaBuffGuid);
     }
 
-    servant.Remove<ServantEquipment>();
+    foreach (var tempBuff in ServantTempBuffs) {
+      BuffService.TryApplyBuff(servant, tempBuff.Key, tempBuff.Value);
+    }
   }
 
   private static void ConfigureServantBehavior(Entity servant, PlayerData playerData) {
@@ -151,6 +157,8 @@ internal static class CarrierService {
     servant.With((ref Follower follower) => {
       follower.Followed._Value = playerData.UserEntity;
     });
+
+    servant.Remove<ServantEquipment>();
 
     RemoveDisableComponents(servant);
     servant.SetTeam(playerData.CharacterEntity);
@@ -185,7 +193,7 @@ internal static class CarrierService {
     if (Entity.Null.Equals(servant)) return;
 
     LoadServantInventory(servant, playerData);
-    CastAbilityOnServant(servant, SpawnAbility);
+    AbilityService.CastAbility(servant, SpawnAbility);
   }
 
   private static void LoadServantInventory(Entity servant, PlayerData playerData) {
@@ -195,6 +203,7 @@ internal static class CarrierService {
       InventoryService.AddItem(servant, new(item.Key), item.Value);
     }
   }
+
   private static void RunDialogSequence(Entity coffin, PlayerData playerData) {
     var index = 0;
 
@@ -245,7 +254,7 @@ internal static class CarrierService {
 
   private static void PlayPreDespawnEffects(Entity servant) {
     BuffService.TryApplyBuff(servant, DespawnVisualBuff);
-    CastAbilityOnServant(servant, DespawnAbility);
+    AbilityService.CastAbility(servant, DespawnAbility);
   }
 
   private static void AddAction(PlayerData playerData, ActionId action) {
@@ -254,19 +263,6 @@ internal static class CarrierService {
     } else {
       _spawnSequences[playerData.PlatformId].Add(action);
     }
-  }
-  private static void CastAbilityOnServant(Entity entity, PrefabGUID abilityGroup) {
-    var castEvent = new CastAbilityServerDebugEvent {
-      AbilityGroup = abilityGroup,
-      Who = entity.Read<NetworkId>(),
-    };
-
-    var fromCharacter = new FromCharacter {
-      Character = entity,
-      User = entity
-    };
-
-    GameSystems.DebugEventsSystem.CastAbilityServerDebugEvent(0, ref castEvent, ref fromCharacter);
   }
 
   public static void ClearServants() {
@@ -282,6 +278,10 @@ internal static class CarrierService {
 
   private static void RemoveServant(Entity servant) {
     if (Entity.Null.Equals(servant)) return;
+
+    var userEntity = servant.Read<Follower>().Followed._Value;
+
+    _spawnedServants.Remove(userEntity.Read<User>().PlatformId);
 
     servant.Remove<Follower>();
     InventoryService.ClearInventory(servant);
