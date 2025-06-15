@@ -8,7 +8,7 @@ namespace ScarletCarrier.Commands;
 [CommandGroup("carrier")]
 public static class TestCommands {
 
-  [Command("call")]
+  [Command("call", shortHand: "c")]
   public static void SummonCommand(ChatCommandContext ctx) {
     if (!PlayerService.TryGetByName(ctx.User.CharacterName.ToString(), out var playerData)) {
       ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
@@ -21,7 +21,7 @@ public static class TestCommands {
     ctx.Reply($"Use ~.carrier dismiss~ to dismiss it early.".Format());
   }
 
-  [Command("dismiss")]
+  [Command("dismiss", shortHand: "d")]
   public static void DismissCommand(ChatCommandContext ctx) {
     if (!PlayerService.TryGetByName(ctx.User.CharacterName.ToString(), out var playerData)) {
       ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());

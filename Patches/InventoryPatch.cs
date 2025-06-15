@@ -7,6 +7,7 @@ using ScarletCore.Services;
 using Unity.Collections;
 using Unity.Entities;
 using ScarletCore;
+using ScarletCore.Systems;
 
 namespace ScarletCarrier.Patches;
 
@@ -17,6 +18,7 @@ internal static class EquipmentTransferSystemPatch {
   [HarmonyPatch(typeof(ReactToInventoryChangedSystem), nameof(ReactToInventoryChangedSystem.OnUpdate))]
   [HarmonyPrefix]
   public static void Prefix(EquipServantItemFromInventorySystem __instance) {
+    if (!GameSystems.Initialized) return;
     var query = __instance.__query_1850506269_0.ToComponentDataArray<InventoryChangedEvent>(Allocator.Temp);
     foreach (var e in query) {
       if (e.InventoryEntity.Equals(Entity.Null) || !e.InventoryEntity.Has<Attach>()) continue;

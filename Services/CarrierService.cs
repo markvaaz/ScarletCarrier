@@ -27,7 +27,7 @@ internal static class CarrierService {
   private static readonly PrefabGUID NeutralFaction = new(-1430861195);
 
   private const float MaxDuration = 60f;
-  private const float TeleportDistance = 3f;
+  private const float MaxDistance = 3f;
   private const float DialogInterval = 2f;
 
   private static readonly PrefabGUID[] ServantPermaBuffs = [
@@ -126,6 +126,7 @@ internal static class CarrierService {
     ApplyServantBuffs(servant);
     ConfigureServantBehavior(servant, playerData);
     PositionServant(servant, playerData);
+    LookAtPlayer(servant, playerData.CharacterEntity);
 
     return servant;
   }
@@ -164,15 +165,21 @@ internal static class CarrierService {
     RemoveDisableComponents(servant);
     servant.SetTeam(playerData.CharacterEntity);
   }
-
   private static void PositionServant(Entity servant, PlayerData playerData) {
     var characterPosition = playerData.CharacterEntity.Position();
     var aimPosition = playerData.CharacterEntity.Read<EntityAimData>().AimPosition;
-    var aimDirection = MathUtility.GetDirection(characterPosition, aimPosition);
-    var finalPosition = characterPosition + (aimDirection * TeleportDistance);
+
+    // Calculate distance between character and aim position
+    var distance = math.distance(characterPosition, aimPosition);
+
+    // If aim position is within TeleportDistance, use it directly, otherwise clamp to max distance
+    var finalPosition = distance <= MaxDistance
+      ? aimPosition
+      : characterPosition + (MathUtility.GetDirection(characterPosition, aimPosition) * MaxDistance);
 
     TeleportService.TeleportToPosition(servant, finalPosition);
   }
+
   private static void AfterSpawnScript(Entity coffin, Entity servant, PlayerData playerData) {
     var action = ActionScheduler.CreateSequence()
       .ThenWaitFrames(5)
@@ -192,9 +199,14 @@ internal static class CarrierService {
 
   private static void StartPhase(Entity servant, PlayerData playerData) {
     if (Entity.Null.Equals(servant)) return;
-
     LoadServantInventory(servant, playerData);
     AbilityService.CastAbility(servant, SpawnAbility);
+  }
+
+  private static void LookAtPlayer(Entity servant, Entity playerEntity) {
+    servant.With((ref EntityInput lookAtTarget) => {
+      lookAtTarget.SetAllAimPositions(playerEntity.Position());
+    });
   }
 
   private static void LoadServantInventory(Entity servant, PlayerData playerData) {
