@@ -27,7 +27,7 @@ internal static class CarrierService {
 
   private const float MaxDuration = 60f;
   private const float TeleportDistance = 3f;
-  private const float DialogInterval = 1.5f;
+  private const float DialogInterval = 2f;
 
   private static readonly PrefabGUID[] ServantBuffs = [
     new(-480024072),
