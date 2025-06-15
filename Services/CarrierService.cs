@@ -8,46 +8,50 @@ using ScarletCore.Utils;
 using Stunlock.Core;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Entities.UniversalDelegates;
+using Unity.Mathematics;
 
 namespace ScarletCarrier.Services;
 
 internal static class CarrierService {
-  public static Database Database => Plugin.Database;
-  public static Dictionary<PrefabGUID, int> InventoryItems { get; set; } = [];
-  public static Dictionary<ulong, List<Entity>> SpawnedServants { get; set; } = [];
-  public static Dictionary<ulong, List<ActionId>> SpawnSequences { get; set; } = [];
-  private static readonly PrefabGUID _coffin = new(723455393);
-  public static readonly PrefabGUID _from_servant = new(-1128238456);
-  private static readonly PrefabGUID _to_servant = new(-450600397);
-  private static readonly PrefabGUID _onDespawnVisualBuff = new(1185694153);
-  private static readonly PrefabGUID _spawnAbility = new(2072201164);
-  private static readonly PrefabGUID _despawnAbility = new(-597709516);
-  private static float _maxDuration = 60f; // Default duration
-  private static List<PrefabGUID> BuffList { get; set; } = [
-    new(-480024072),  // Invunerable
-    new(1934061152),  // Deaggro buff
-    new(-1527408583), // Root buff
+  private static Database Database => Plugin.Database;
+
+  private static readonly Dictionary<ulong, List<Entity>> _spawnedServants = [];
+  private static readonly Dictionary<ulong, List<ActionId>> _spawnSequences = [];
+
+  private static readonly PrefabGUID CoffinPrefab = new(723455393);
+  private static readonly PrefabGUID ServantPrefab = new(-450600397);
+  private static readonly PrefabGUID SpawnAbility = new(2072201164);
+  private static readonly PrefabGUID DespawnAbility = new(-597709516);
+  private static readonly PrefabGUID DespawnVisualBuff = new(1185694153);
+  private static readonly PrefabGUID NeutralFaction = new(-1430861195);
+
+  private const float MaxDuration = 60f;
+  private const float TeleportDistance = 3f;
+  private const float DialogInterval = 1.5f;
+
+  private static readonly PrefabGUID[] ServantBuffs = [
+    new(-480024072),
+    new(1934061152),
+    new(-1527408583)
   ];
 
-  private static readonly List<string> _servantDialog = [
+  private static readonly string[] DialogLines = [
     "Hi I'm your carrier.",
     "You can give me your items to store them.",
-    "Once you are done, please dismiss me.",
+    "Once you are done, please dismiss me."
   ];
-
   public static void Spawn(PlayerData playerData) {
-    if (SpawnedServants.ContainsKey(playerData.PlatformId)) {
-      return; // Already spawned a servant for this player
+    if (_spawnedServants.ContainsKey(playerData.PlatformId)) {
+      return;
     }
-    AbilityService.CastAbility(playerData.CharacterEntity, _spawnAbility);
 
+    AbilityService.CastAbility(playerData.CharacterEntity, SpawnAbility);
     CreateCoffin(playerData);
   }
 
   public static void Dismiss(PlayerData playerData) {
-    if (!SpawnedServants.TryGetValue(playerData.PlatformId, out var entities) || entities.Count == 0) {
-      return; // No servant to dismiss
+    if (!_spawnedServants.TryGetValue(playerData.PlatformId, out var entities) || entities.Count == 0) {
+      return;
     }
 
     var coffin = entities[0];
@@ -61,24 +65,29 @@ internal static class CarrierService {
       .Then(() => RemoveServant(servant))
       .Execute();
 
-    SpawnedServants.Remove(playerData.PlatformId);
+    _spawnedServants.Remove(playerData.PlatformId);
 
-    foreach (var action in SpawnSequences.GetValueOrDefault(playerData.PlatformId, [])) {
+    foreach (var action in _spawnSequences.GetValueOrDefault(playerData.PlatformId, [])) {
       ActionScheduler.CancelAction(action);
     }
   }
-
-  public static void CreateCoffin(PlayerData playerData) {
-    var coffin = UnitSpawnerService.ImmediateSpawn(_coffin, playerData.CharacterEntity.Position(), owner: Entity.Null, lifeTime: _maxDuration);
+  private static void CreateCoffin(PlayerData playerData) {
+    var coffin = UnitSpawnerService.ImmediateSpawn(CoffinPrefab, playerData.CharacterEntity.Position(), owner: Entity.Null, lifeTime: MaxDuration);
     var position = playerData.CharacterEntity.Position();
     var servant = CreateServant(playerData, coffin);
 
-    SpawnedServants.Add(playerData.PlatformId, [coffin, servant]);
+    _spawnedServants.Add(playerData.PlatformId, [coffin, servant]);
 
-    TeleportService.TeleportToPosition(coffin, new(position.x, 200, position.z));
+    TeleportService.TeleportToPosition(coffin, new float3(position.x, 200, position.z));
 
     coffin.SetTeam(playerData.CharacterEntity);
+    ConfigureCoffinServantConnection(coffin, servant, playerData);
+    RemoveDisableComponents(coffin);
 
+    AfterSpawnScript(coffin, servant, playerData);
+  }
+
+  private static void ConfigureCoffinServantConnection(Entity coffin, Entity servant, PlayerData playerData) {
     servant.AddWith((ref ServantConnectedCoffin servantConnectedCoffin) => {
       servantConnectedCoffin.CoffinEntity = coffin;
     });
@@ -88,27 +97,36 @@ internal static class CarrierService {
       coffinStation.ServantName = new FixedString64Bytes($"{playerData.Name}'s Carrier");
       coffinStation.State = ServantCoffinState.ServantAlive;
     });
-
-    if (coffin.Has<DisableWhenNoPlayersInRange>()) {
-      coffin.Remove<DisableWhenNoPlayersInRange>();
-    }
-
-    if (coffin.Has<DisableWhenNoPlayersInRangeOfChunk>()) {
-      coffin.Remove<DisableWhenNoPlayersInRangeOfChunk>();
-    }
-
-    AfterSpawnScript(coffin, servant, playerData);
   }
 
-  public static Entity CreateServant(PlayerData playerData, Entity coffin) {
-    var servant = UnitSpawnerService.ImmediateSpawn(_to_servant, coffin.Position(), owner: playerData.CharacterEntity, lifeTime: -1f);
+  private static void RemoveDisableComponents(Entity entity) {
+    if (entity.Has<DisableWhenNoPlayersInRange>()) {
+      entity.Remove<DisableWhenNoPlayersInRange>();
+    }
 
-    foreach (var guid in BuffList) {
-      BuffService.TryApplyBuff(servant, guid);
+    if (entity.Has<DisableWhenNoPlayersInRangeOfChunk>()) {
+      entity.Remove<DisableWhenNoPlayersInRangeOfChunk>();
+    }
+  }
+  private static Entity CreateServant(PlayerData playerData, Entity coffin) {
+    var servant = UnitSpawnerService.ImmediateSpawn(ServantPrefab, coffin.Position(), owner: playerData.CharacterEntity, lifeTime: -1f);
+
+    ApplyServantBuffs(servant);
+    ConfigureServantBehavior(servant, playerData);
+    PositionServant(servant, playerData);
+
+    return servant;
+  }
+
+  private static void ApplyServantBuffs(Entity servant) {
+    foreach (var buffGuid in ServantBuffs) {
+      BuffService.TryApplyBuff(servant, buffGuid);
     }
 
     servant.Remove<ServantEquipment>();
+  }
 
+  private static void ConfigureServantBehavior(Entity servant, PlayerData playerData) {
     servant.With((ref AggroConsumer aggroConsumer) => {
       aggroConsumer.Active._Value = false;
     });
@@ -120,44 +138,32 @@ internal static class CarrierService {
     });
 
     servant.With((ref FactionReference factionReference) => {
-      factionReference.FactionGuid._Value = new(-1430861195);
+      factionReference.FactionGuid._Value = NeutralFaction;
     });
 
     servant.With((ref Follower follower) => {
       follower.Followed._Value = playerData.UserEntity;
     });
 
-    if (servant.Has<DisableWhenNoPlayersInRange>()) {
-      servant.Remove<DisableWhenNoPlayersInRange>();
-    }
-
-    if (servant.Has<DisableWhenNoPlayersInRangeOfChunk>()) {
-      servant.Remove<DisableWhenNoPlayersInRangeOfChunk>();
-    }
-
-    var characterPosition = playerData.CharacterEntity.Position();
-    var aimPosition = playerData.CharacterEntity.Read<EntityAimData>().AimPosition;
-
-    var aimDirection = MathUtility.GetDirection(characterPosition, aimPosition);
-
-    var teleportDistance = 3f;
-
-    var finalPosition = characterPosition + (aimDirection * teleportDistance);
-
-    TeleportService.TeleportToPosition(servant, finalPosition);
-
+    RemoveDisableComponents(servant);
     servant.SetTeam(playerData.CharacterEntity);
-
-    return servant;
   }
 
-  public static void AfterSpawnScript(Entity coffin, Entity servant, PlayerData playerData) {
+  private static void PositionServant(Entity servant, PlayerData playerData) {
+    var characterPosition = playerData.CharacterEntity.Position();
+    var aimPosition = playerData.CharacterEntity.Read<EntityAimData>().AimPosition;
+    var aimDirection = MathUtility.GetDirection(characterPosition, aimPosition);
+    var finalPosition = characterPosition + (aimDirection * TeleportDistance);
+
+    TeleportService.TeleportToPosition(servant, finalPosition);
+  }
+  private static void AfterSpawnScript(Entity coffin, Entity servant, PlayerData playerData) {
     var action = ActionScheduler.CreateSequence()
       .ThenWaitFrames(5)
       .Then(() => StartPhase(servant, playerData))
       .ThenWait(2f)
       .Then(() => RunDialogSequence(coffin, playerData))
-      .ThenWait(_maxDuration - 8f)
+      .ThenWait(MaxDuration - 8f)
       .Then(() => PrepareToLeave(coffin))
       .ThenWait(2)
       .Then(() => EndPhase(coffin, servant))
@@ -168,86 +174,93 @@ internal static class CarrierService {
     AddAction(playerData, action);
   }
 
-  public static void StartPhase(Entity servant, PlayerData playerData) {
+  private static void StartPhase(Entity servant, PlayerData playerData) {
     if (Entity.Null.Equals(servant)) return;
 
+    LoadServantInventory(servant, playerData);
+    CastAbilityOnServant(servant, SpawnAbility);
+  }
+
+  private static void LoadServantInventory(Entity servant, PlayerData playerData) {
     var inventoryItems = Database.Get<Dictionary<int, int>>(playerData.PlatformId.ToString());
 
     foreach (var item in inventoryItems) {
       InventoryService.AddItem(servant, new(item.Key), item.Value);
     }
-
-    CastAbilityOnServant(servant, _spawnAbility);
   }
 
-  public static void RunDialogSequence(Entity coffin, PlayerData playerData) {
+  private static void RunDialogSequence(Entity coffin, PlayerData playerData) {
     var index = 0;
 
     var action = ActionScheduler.Repeating(() => {
       coffin.With((ref ServantCoffinstation coffinStation) => {
-        if (index == _servantDialog.Count) {
+        if (index == DialogLines.Length) {
           coffinStation.ServantName = new FixedString64Bytes($"{playerData.Name}'s Carrier");
         } else {
-          coffinStation.ServantName = new FixedString64Bytes(_servantDialog[index]);
+          coffinStation.ServantName = new FixedString64Bytes(DialogLines[index]);
         }
       });
 
       index++;
-    }, 1.5f, _servantDialog.Count + 1);
+    }, DialogInterval, DialogLines.Length + 1);
 
     AddAction(playerData, action);
   }
-
-  public static void PrepareToLeave(Entity coffin) {
-    if (Entity.Null.Equals(coffin)) {
-      return;
-    }
+  private static void PrepareToLeave(Entity coffin) {
+    if (Entity.Null.Equals(coffin)) return;
 
     coffin.With((ref ServantCoffinstation coffinStation) => {
       coffinStation.ServantName = new FixedString64Bytes("All right, I'm about to head out.");
     });
   }
 
-  public static void EndPhase(Entity coffin, Entity servant) {
-    if (Entity.Null.Equals(coffin) || Entity.Null.Equals(servant)) {
-      return;
-    }
+  private static void EndPhase(Entity coffin, Entity servant) {
+    if (Entity.Null.Equals(coffin) || Entity.Null.Equals(servant)) return;
 
+    CleanupServant(servant);
+    UpdateCoffinFarewell(coffin);
+    PlayDespawnEffects(servant);
+  }
+
+  private static void CleanupServant(Entity servant) {
     servant.Remove<Follower>();
+    InventoryService.ClearInventory(servant);
 
     servant.With((ref Interactable interactable) => {
       interactable.Disabled = true;
     });
+  }
 
-    InventoryService.ClearInventory(servant);
-
+  private static void UpdateCoffinFarewell(Entity coffin) {
     coffin.With((ref ServantCoffinstation coffinStation) => {
       coffinStation.ServantName = new FixedString64Bytes("See you later!");
     });
-
-    BuffService.TryApplyBuff(servant, _onDespawnVisualBuff);
-
-    CastAbilityOnServant(servant, _despawnAbility);
   }
 
-  public static void AddAction(PlayerData playerData, ActionId action) {
-    if (!SpawnSequences.ContainsKey(playerData.PlatformId)) {
-      SpawnSequences.Add(playerData.PlatformId, [action]);
-    } else SpawnSequences[playerData.PlatformId].Add(action);
+  private static void PlayDespawnEffects(Entity servant) {
+    BuffService.TryApplyBuff(servant, DespawnVisualBuff);
+    CastAbilityOnServant(servant, DespawnAbility);
   }
 
-  public static void CastAbilityOnServant(Entity entity, PrefabGUID abilityGroup) {
-    CastAbilityServerDebugEvent castAbilityServerDebugEvent = new() {
+  private static void AddAction(PlayerData playerData, ActionId action) {
+    if (!_spawnSequences.ContainsKey(playerData.PlatformId)) {
+      _spawnSequences.Add(playerData.PlatformId, [action]);
+    } else {
+      _spawnSequences[playerData.PlatformId].Add(action);
+    }
+  }
+  private static void CastAbilityOnServant(Entity entity, PrefabGUID abilityGroup) {
+    var castEvent = new CastAbilityServerDebugEvent {
       AbilityGroup = abilityGroup,
       Who = entity.Read<NetworkId>(),
     };
 
-    FromCharacter fromCharacter = new() {
+    var fromCharacter = new FromCharacter {
       Character = entity,
       User = entity
     };
 
-    GameSystems.DebugEventsSystem.CastAbilityServerDebugEvent(0, ref castAbilityServerDebugEvent, ref fromCharacter);
+    GameSystems.DebugEventsSystem.CastAbilityServerDebugEvent(0, ref castEvent, ref fromCharacter);
   }
 
   public static void ClearServants() {
@@ -262,9 +275,7 @@ internal static class CarrierService {
   }
 
   private static void RemoveServant(Entity servant) {
-    if (Entity.Null.Equals(servant)) {
-      return;
-    }
+    if (Entity.Null.Equals(servant)) return;
 
     servant.Remove<Follower>();
     InventoryService.ClearInventory(servant);
