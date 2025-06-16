@@ -14,6 +14,8 @@
 
 When you summon a carrier, your personal servant appears and can store items in its inventory. After 60 seconds, the servant automatically despawns, but all items are saved and will be restored when you summon your carrier again.
 
+**Note:** Instanced items (items with unique properties like enchantments or durability) cannot be stored in the carrier to prevent data loss during restoration.
+
 ## Features
 
 * Summon a servant that can carry items
@@ -25,6 +27,8 @@ When you summon a carrier, your personal servant appears and can store items in 
 ## Upcoming Features
 
 * Following the player (maybe or maybe not)
+* Storage for instanced items
+* Customizable carrier appearance
 
 ## Commands
 

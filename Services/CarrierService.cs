@@ -82,6 +82,19 @@ internal static class CarrierService {
       ActionScheduler.CancelAction(action);
     }
   }
+
+  public static bool HasServant(ulong platformId) {
+    return _spawnedServants.ContainsKey(platformId) && _spawnedServants[platformId].Count > 0;
+  }
+
+  public static Entity GetServant(ulong platformId) {
+    if (_spawnedServants.TryGetValue(platformId, out var entities) && entities.Count > 1) {
+      return entities[1]; // Return the servant entity
+    }
+
+    return Entity.Null; // No servant found
+  }
+
   private static void CreateCoffin(PlayerData playerData) {
     var coffin = UnitSpawnerService.ImmediateSpawn(CoffinPrefab, playerData.CharacterEntity.Position(), owner: Entity.Null, lifeTime: MaxDuration);
     var position = playerData.CharacterEntity.Position();
@@ -286,7 +299,6 @@ internal static class CarrierService {
       RemoveServant(servant);
     }
   }
-
 
   private static void RemoveServant(Entity servant) {
     if (Entity.Null.Equals(servant) || !servant.Has<Follower>()) return;
