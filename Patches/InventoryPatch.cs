@@ -25,9 +25,14 @@ internal static class EquipmentTransferSystemPatch {
 
       var servant = e.InventoryEntity.Read<Attach>().Parent;
 
+      if (servant.Equals(Entity.Null)) continue;
+
       if (e.ChangeType == InventoryChangedEventType.Moved || !servant.Has<ServantData>() || !servant.Has<Follower>()) continue;
 
       var playerOwner = servant.Read<Follower>().Followed._Value;
+
+      if (playerOwner.Equals(Entity.Null) || !playerOwner.Exists() || !playerOwner.Has<User>()) continue;
+
       var inventory = InventoryService.GetInventoryItems(servant);
       var inventoryItems = new Dictionary<int, int>();
       var platformId = playerOwner.Read<User>().PlatformId.ToString();
