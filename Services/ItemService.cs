@@ -6,36 +6,36 @@ using ProjectM;
 namespace ScarletCarrier.Services;
 
 internal static class ItemService {
-  public static ModifiedItemType GetItemType(Entity itemEntity) {
-    if (!itemEntity.Exists()) return ModifiedItemType.None;
+  public static InstancedItemType GetItemType(Entity itemEntity) {
+    if (!itemEntity.Exists()) return InstancedItemType.None;
 
     if (itemEntity.Has<WeaponLevelSource>()) {
-      return ModifiedItemType.Weapon;
+      return InstancedItemType.Weapon;
     }
 
     if (itemEntity.Has<ArmorLevelSource>()) {
-      return ModifiedItemType.Armor;
+      return InstancedItemType.Armor;
     }
 
     if (itemEntity.Has<SpellLevelSource>()) {
-      return ModifiedItemType.SpellSource;
+      return InstancedItemType.SpellSource;
     }
 
     if (itemEntity.Has<ConsumableCondition>()) {
-      return ModifiedItemType.Consumable;
+      return InstancedItemType.Consumable;
     }
 
     if (itemEntity.Has<JewelLevelSource>()) {
-      return ModifiedItemType.Jewel;
+      return InstancedItemType.Jewel;
     }
 
-    return ModifiedItemType.None;
+    return InstancedItemType.None;
   }
 
   public static bool IsValid(Entity itemEntity) {
     if (!itemEntity.Exists()) return false;
 
-    if (GetItemType(itemEntity) != ModifiedItemType.None) {
+    if (GetItemType(itemEntity) != InstancedItemType.None) {
       return false;
     }
 
