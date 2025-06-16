@@ -288,13 +288,14 @@ internal static class CarrierService {
   }
 
   private static void RemoveServant(Entity servant) {
-    if (Entity.Null.Equals(servant)) return;
+    if (Entity.Null.Equals(servant) || !servant.Exists()) return;
 
-    var userEntity = servant.Read<Follower>().Followed._Value;
-
-    servant.Remove<Follower>();
-
-    _spawnedServants.Remove(userEntity.Read<User>().PlatformId);
+    if (servant.TryGetComponent(out Follower follower)) {
+      var userEntity = follower.Followed._Value;
+      if (userEntity.Exists() && userEntity.TryGetComponent(out User user)) {
+        _spawnedServants.Remove(user.PlatformId);
+      }
+    }
 
     InventoryService.ClearInventory(servant);
     servant.Destroy();
