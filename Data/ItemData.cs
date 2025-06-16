@@ -1,6 +1,6 @@
 namespace ScarletCarrier.Data;
 
-enum ModifiedItemType {
+enum InstancedItemType {
   None = 0,
   Weapon = 1,
   Armor = 2,
