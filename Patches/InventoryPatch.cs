@@ -55,7 +55,6 @@ internal static class MoveItemBetweenInventoriesSystemPatch {
       }
     } catch (System.Exception ex) {
       Log.Error($"Error in MoveItemBetweenInventoriesSystemPatch: {ex.Message}");
-      return;
     } finally {
       entities.Dispose();
       events.Dispose();
@@ -88,10 +87,18 @@ internal static class ReactToInventoryChangedSystemPatch {
 
         var inventory = InventoryService.GetInventoryItems(servant);
         var inventoryItems = new Dictionary<int, int>();
-        var platformId = playerOwner.Read<User>().PlatformId.ToString();
+        var user = playerOwner.Read<User>();
+        var platformId = user.PlatformId.ToString();
 
         foreach (var item in inventory) {
           if (item.ItemType.GuidHash == 0) continue;
+          var itemEntity = GameSystems.PrefabCollectionSystem._PrefabGuidToEntityMap[item.ItemType];
+
+          if (!ItemService.IsValid(itemEntity)) {
+            MessageService.Send(user, "You ignored the warnings and tried to store equipment in your carrier. ~The item has been deleted forever~!".FormatError());
+            InventoryService.RemoveItem(servant, item.ItemType, item.Amount);
+            continue;
+          }
 
           if (inventoryItems.ContainsKey(item.ItemType.GuidHash)) {
             inventoryItems[item.ItemType.GuidHash] += item.Amount;

@@ -17,8 +17,8 @@ public static class TestCommands {
     CarrierService.Spawn(playerData);
 
     ctx.Reply($"Your ~carrier~ has been summoned!".Format());
-    ctx.Reply($"It will automatically despawn in ~60 seconds~.".Format());
     ctx.Reply($"Use ~.carrier dismiss~ to dismiss it early.".Format());
+    ctx.Reply($"Do ~NOT~ store equipment in the carrier, it will be lost.".FormatError());
   }
 
   [Command("dismiss", shortHand: "d")]

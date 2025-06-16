@@ -203,7 +203,10 @@ internal static class CarrierService {
       .ThenWait(MaxDuration - 8f)
       .Then(() => PrepareToLeave(coffin))
       .ThenWait(2f)
-      .Then(() => EndPhase(coffin, servant))
+      .Then(() => {
+        MessageService.Send(playerData.User, "Your ~carrier~ has reached its time limit and will now despawn.".Format());
+        EndPhase(coffin, servant);
+      })
       .ThenWait(2f)
       .Then(() => RemoveServant(servant))
       .Execute();
