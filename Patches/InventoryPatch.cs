@@ -47,7 +47,7 @@ internal static class MoveItemBetweenInventoriesSystemPatch {
 
         if (InventoryUtilities.TryGetItemAtSlot(characterInventory, itemSlot, out var itemBuffer)) {
           var item = GameSystems.PrefabCollectionSystem._PrefabGuidToEntityMap[itemBuffer.ItemType];
-          Log.Components(item);
+
           if (!ItemService.IsValid(item)) {
             GameSystems.EntityManager.DestroyEntity(entity);
           }
