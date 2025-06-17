@@ -64,4 +64,4 @@ Make sure BepInEx is installed and loaded **before** installing ScarletCarrier.
 
 ## This project is made possible by the contributions of the following individuals:
 
-- **cheesasaurus, EduardoG, Helskog, Mitch, SirSaia, Odjit** & the [V Rising Mod Community on Discord](https://vrisingmods.com/discord
+- **cheesasaurus, EduardoG, Helskog, Mitch, SirSaia, Odjit** & the [V Rising Mod Community on Discord](https://vrisingmods.com/discord)
