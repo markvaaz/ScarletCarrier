@@ -1,8 +1,8 @@
 {
   "name": "ScarletCarrier",
-  "version_number": "0.6.2",
+  "version_number": "0.6.3",
   "website_url": "https://github.com/markvaaz/ScarletCarrier",
-  "description": "Summon a servant that carries items for you. Simple commands, automatic inventory persistence.",
+  "description": "Summon a servant that carries items for you!",
   "dependencies": [
     "BepInEx-BepInExPack_V_Rising-1.733.2",
     "ScarletMods-ScarletCore-1.0.5"
