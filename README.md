@@ -62,4 +62,8 @@ Make sure BepInEx is installed and loaded **before** installing ScarletCarrier.
 3. Ensure **ScarletCore** and **VampireCommandFramework** are also installed in the `plugins` folder.
 4. Start or restart your server.
 
+## This project is made possible by the contributions of the following individuals:
+
+- **cheesasaurus, EduardoG, Helskog, Mitch, SirSaia, Odjit** & the [V Rising Mod Community on Discord](https://vrisingmods.com/discord)
+
 ## Join the [modding community on Discord](https://vrisingmods.com/discord).
