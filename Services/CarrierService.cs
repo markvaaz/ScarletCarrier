@@ -112,7 +112,7 @@ internal static class CarrierService {
 
   private static void ConfigureCoffinServantConnection(Entity coffin, Entity servant, PlayerData playerData) {
     servant.AddWith((ref ServantConnectedCoffin servantConnectedCoffin) => {
-      servantConnectedCoffin.CoffinEntity = coffin;
+      servantConnectedCoffin.CoffinEntity._Entity = coffin;
     });
 
     coffin.AddWith((ref ServantCoffinstation coffinStation) => {
@@ -132,6 +132,7 @@ internal static class CarrierService {
       entity.Remove<DisableWhenNoPlayersInRangeOfChunk>();
     }
   }
+
   private static Entity CreateServant(PlayerData playerData, Entity coffin) {
     var servant = UnitSpawnerService.ImmediateSpawn(ServantPrefab, coffin.Position(), owner: playerData.CharacterEntity, lifeTime: -1f);
 
@@ -194,7 +195,7 @@ internal static class CarrierService {
 
   private static void AfterSpawnScript(Entity coffin, Entity servant, PlayerData playerData) {
     var action = ActionScheduler.CreateSequence()
-      .ThenWaitFrames(5)
+      .ThenWait(1f)
       .Then(() => StartPhase(servant, playerData))
       .ThenWait(2f)
       .Then(() => RunDialogSequence(coffin, playerData))
