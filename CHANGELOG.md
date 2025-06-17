@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.6.3] - 2025-06-17
+
+### Fixed
+- Fixed servant spawning at incorrect height - now spawns at same level as player
+
 ## [0.6.2] - 2025-06-16
 
 ### Fixed
