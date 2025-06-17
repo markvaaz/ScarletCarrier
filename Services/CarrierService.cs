@@ -234,6 +234,7 @@ internal static class CarrierService {
   }
 
   private static void RunDialogSequence(Entity coffin, PlayerData playerData) {
+    if (Entity.Null.Equals(coffin)) return;
     var index = 0;
 
     var action = ActionScheduler.Repeating(() => {
@@ -249,7 +250,7 @@ internal static class CarrierService {
     AddAction(playerData, action);
   }
   private static void PrepareToLeave(Entity coffin) {
-    if (Entity.Null.Equals(coffin) || !coffin.Exists()) return;
+    if (Entity.Null.Equals(coffin)) return;
 
     SetDialog(coffin, PreparingToLeaveDialog);
   }
@@ -317,9 +318,3 @@ internal static class CarrierService {
     servant.Destroy();
   }
 }
-
-/*
-
-
-
-*/
