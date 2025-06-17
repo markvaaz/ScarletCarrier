@@ -2,7 +2,7 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>ScarletCarrier</AssemblyName>
-    <Description>Scarlet Template</Description>
+    <Description>Scarlet Carrier</Description>
     <Version>0.6.3</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
