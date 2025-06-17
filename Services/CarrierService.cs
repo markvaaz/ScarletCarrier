@@ -87,10 +87,10 @@ internal static class CarrierService {
 
   public static Entity GetServant(ulong platformId) {
     if (_spawnedServants.TryGetValue(platformId, out var entities) && entities.Count > 1) {
-      return entities[1]; // Return the servant entity
+      return entities[1];
     }
 
-    return Entity.Null; // No servant found
+    return Entity.Null;
   }
 
   private static void CreateCoffin(PlayerData playerData) {
@@ -182,10 +182,8 @@ internal static class CarrierService {
     var characterPosition = playerData.CharacterEntity.Position();
     var aimPosition = playerData.CharacterEntity.Read<EntityAimData>().AimPosition;
 
-    // Calculate distance between character and aim position
     var distance = math.distance(characterPosition, aimPosition);
 
-    // If aim position is within TeleportDistance, use it directly, otherwise clamp to max distance
     var finalPosition = distance <= MaxDistance
       ? aimPosition
       : characterPosition + (MathUtility.GetDirection(characterPosition, aimPosition) * MaxDistance);

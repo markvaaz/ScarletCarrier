@@ -1,6 +1,6 @@
 {
   "name": "ScarletCarrier",
-  "version_number": "0.6.1",
+  "version_number": "0.6.2",
   "website_url": "https://github.com/markvaaz/ScarletCarrier",
   "description": "Summon a servant that carries items for you. Simple commands, automatic inventory persistence.",
   "dependencies": [
