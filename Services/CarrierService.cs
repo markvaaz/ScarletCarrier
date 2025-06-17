@@ -195,7 +195,7 @@ internal static class CarrierService {
 
   private static void AfterSpawnScript(Entity coffin, Entity servant, PlayerData playerData) {
     var action = ActionScheduler.CreateSequence()
-      .ThenWait(1f)
+      .ThenWaitFrames(10)
       .Then(() => StartPhase(servant, playerData))
       .ThenWait(2f)
       .Then(() => RunDialogSequence(coffin, playerData))
@@ -226,7 +226,7 @@ internal static class CarrierService {
   }
 
   private static void LoadServantInventory(Entity servant, PlayerData playerData) {
-    var inventoryItems = Database.Get<Dictionary<int, int>>(playerData.PlatformId.ToString());
+    Dictionary<int, int> inventoryItems = Database.Get<Dictionary<int, int>>(playerData.PlatformId.ToString()) ?? [];
 
     foreach (var item in inventoryItems) {
       InventoryService.AddItem(servant, new(item.Key), item.Value);
@@ -249,7 +249,7 @@ internal static class CarrierService {
     AddAction(playerData, action);
   }
   private static void PrepareToLeave(Entity coffin) {
-    if (Entity.Null.Equals(coffin)) return;
+    if (Entity.Null.Equals(coffin) || !coffin.Exists()) return;
 
     SetDialog(coffin, PreparingToLeaveDialog);
   }
