@@ -76,8 +76,6 @@ internal static class CarrierService {
       .Then(() => RemoveServant(servant))
       .Execute();
 
-    _spawnedServants.Remove(playerData.PlatformId);
-
     foreach (var action in _spawnSequences.GetValueOrDefault(playerData.PlatformId, [])) {
       ActionScheduler.CancelAction(action);
     }
@@ -318,3 +316,9 @@ internal static class CarrierService {
     servant.Destroy();
   }
 }
+
+/*
+
+
+
+*/

@@ -14,6 +14,11 @@ public static class TestCommands {
       ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
     }
 
+    if (CarrierService.HasServant(playerData.PlatformId)) {
+      ctx.Reply($"You already have a ~carrier~ summoned.".FormatError());
+      return;
+    }
+
     CarrierService.Spawn(playerData);
 
     ctx.Reply($"Your ~carrier~ has been summoned!".Format());
@@ -25,6 +30,11 @@ public static class TestCommands {
   public static void DismissCommand(ChatCommandContext ctx) {
     if (!PlayerService.TryGetById(ctx.User.PlatformId, out var playerData)) {
       ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
+    }
+
+    if (!CarrierService.HasServant(playerData.PlatformId)) {
+      ctx.Reply($"You do not have a ~carrier~ summoned.".FormatError());
+      return;
     }
 
     CarrierService.Dismiss(playerData);
