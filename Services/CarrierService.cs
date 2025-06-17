@@ -178,6 +178,7 @@ internal static class CarrierService {
     RemoveDisableComponents(servant);
     servant.SetTeam(playerData.CharacterEntity);
   }
+
   private static void PositionServant(Entity servant, PlayerData playerData) {
     var characterPosition = playerData.CharacterEntity.Position();
     var aimPosition = playerData.CharacterEntity.Read<EntityAimData>().AimPosition;
@@ -187,6 +188,9 @@ internal static class CarrierService {
     var finalPosition = distance <= MaxDistance
       ? aimPosition
       : characterPosition + (MathUtility.GetDirection(characterPosition, aimPosition) * MaxDistance);
+
+    // Use the player's Y position to ensure same height
+    finalPosition.y = characterPosition.y;
 
     TeleportService.TeleportToPosition(servant, finalPosition);
   }
@@ -215,6 +219,9 @@ internal static class CarrierService {
     if (Entity.Null.Equals(servant)) return;
     LoadServantInventory(servant, playerData);
     AbilityService.CastAbility(servant, SpawnAbility);
+    var playerPosition = playerData.CharacterEntity.Position();
+    var servantPosition = servant.Position();
+    TeleportService.TeleportToPosition(servant, new(servantPosition.x, playerPosition.y, servantPosition.z));
   }
 
   private static void LookAtPlayer(Entity servant, Entity playerEntity) {
