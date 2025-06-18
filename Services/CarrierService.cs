@@ -33,12 +33,12 @@ internal static class CarrierService {
   private static readonly PrefabGUID[] ServantPermaBuffs = [
     new(-480024072), // Invulnerable Buff
     new(1934061152), // Disable aggro
-    new(1360141727)
+    new(1360141727)  // Immaterial
   ];
 
   private static readonly Dictionary<PrefabGUID, float> ServantTempBuffs = new() {
     { new PrefabGUID(-1855386239), 0.2f }, // Blood
-    { new PrefabGUID(-2061378836), 3f } // Heart explosion
+    { new PrefabGUID(-2061378836), 3f }    // Heart explosion
   };
 
   private static readonly string[] GreetingsDialogLines = [
