@@ -17,7 +17,6 @@ public class Plugin : BasePlugin {
   public static Harmony Harmony => _harmony;
   public static Plugin Instance { get; private set; }
   public static ManualLogSource LogInstance { get; private set; }
-  public static Settings Settings { get; private set; }
   public static Database Database { get; private set; }
 
   public override void Load() {
@@ -43,9 +42,5 @@ public class Plugin : BasePlugin {
     _harmony?.UnpatchSelf();
     CommandRegistry.UnregisterAssembly();
     return true;
-  }
-
-  public static void ReloadSettings() {
-    Settings.Dispose();
   }
 }
