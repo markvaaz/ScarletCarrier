@@ -30,10 +30,11 @@ public class Plugin : BasePlugin {
     _harmony.PatchAll(System.Reflection.Assembly.GetExecutingAssembly());
 
     EventManager.OnInitialize += (_, _) => {
-      CarrierService.ClearServants();
+      Log.LogInfo("Removing carrier entities...");
+      CarrierService.ClearAll();
+      Log.LogInfo("Carrier entities removed.");
     };
 
-    Settings = new Settings(MyPluginInfo.PLUGIN_GUID, Instance);
     Database = new Database(MyPluginInfo.PLUGIN_GUID);
     CommandRegistry.RegisterAll();
   }
@@ -46,36 +47,5 @@ public class Plugin : BasePlugin {
 
   public static void ReloadSettings() {
     Settings.Dispose();
-    LoadSettings();
   }
-  public static void LoadSettings() {
-    Settings.Section("General")
-      .Add("Enable", true, "Enable or disable the plugin");
-  }
-
-  /*
-    [CommandGroup("groupname")]
-    public class CommandGroup
-    {
-      [Command("commandname", "Description of the command")]
-      public static void CommandName(CommandContext context)
-      {
-        // Command implementation
-        context.Reply("Command executed successfully!");
-      }
-    }
-  */
-
-  /*
-    [RconCommandCategory("categoryname")]
-    public class RconCommandCategory
-    {
-      [RconCommand("commandname", "Description of the command")]
-      public static string CommandName()
-      {
-        // Command implementation
-        return "Command executed successfully!"
-      }
-    }
-  */
 }

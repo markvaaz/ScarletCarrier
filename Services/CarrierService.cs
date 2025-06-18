@@ -10,6 +10,7 @@ using Stunlock.Core;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
+using Unity.Transforms;
 
 namespace ScarletCarrier.Services;
 
@@ -29,7 +30,8 @@ internal static class CarrierService {
   private const float MaxDuration = 60f;
   private const float MaxDistance = 3f;
   private const float DialogInterval = 2f;
-
+  private const float Height = 221f; // The height serve as a reference for despawning the coffin and servant.
+  private const float LegacyHeight = 200f; // Legacy height for compatibility with older data. (Will be removed in future updates)
   private static readonly PrefabGUID[] ServantPermaBuffs = [
     new(-480024072), // Invulnerable Buff
     new(1934061152), // Disable aggro
@@ -74,7 +76,7 @@ internal static class CarrierService {
       .ThenWait(2)
       .Then(() => EndPhase(coffin, servant))
       .ThenWait(2)
-      .Then(() => RemoveServant(servant))
+      .Then(() => RemoveCoffin(coffin))
       .Execute();
 
     foreach (var action in _spawnSequences.GetValueOrDefault(playerData.PlatformId, [])) {
@@ -95,13 +97,13 @@ internal static class CarrierService {
   }
 
   private static void CreateCoffin(PlayerData playerData) {
-    var coffin = UnitSpawnerService.ImmediateSpawn(CoffinPrefab, playerData.CharacterEntity.Position(), owner: Entity.Null, lifeTime: MaxDuration);
+    var coffin = UnitSpawnerService.ImmediateSpawn(CoffinPrefab, playerData.CharacterEntity.Position(), owner: Entity.Null, lifeTime: -1);
     var position = playerData.CharacterEntity.Position();
     var servant = CreateServant(playerData, coffin);
 
     _spawnedServants.Add(playerData.PlatformId, [coffin, servant]);
 
-    TeleportService.TeleportToPosition(coffin, new float3(position.x, 200, position.z));
+    TeleportService.TeleportToPosition(coffin, new float3(position.x, Height, position.z));
 
     coffin.SetTeam(playerData.CharacterEntity);
 
@@ -113,11 +115,11 @@ internal static class CarrierService {
 
   private static void ConfigureCoffinServantConnection(Entity coffin, Entity servant, PlayerData playerData) {
     servant.AddWith((ref ServantConnectedCoffin servantConnectedCoffin) => {
-      servantConnectedCoffin.CoffinEntity._Entity = coffin;
+      servantConnectedCoffin.CoffinEntity = NetworkedEntity.ServerEntity(coffin);
     });
 
     coffin.AddWith((ref ServantCoffinstation coffinStation) => {
-      coffinStation.ConnectedServant._Entity = servant;
+      coffinStation.ConnectedServant = NetworkedEntity.ServerEntity(servant);
       coffinStation.State = ServantCoffinState.ServantAlive;
     });
 
@@ -190,7 +192,6 @@ internal static class CarrierService {
       ? aimPosition
       : characterPosition + (MathUtility.GetDirection(characterPosition, aimPosition) * MaxDistance);
 
-    // Use the player's Y position to ensure same height
     finalPosition.y = characterPosition.y;
 
     TeleportService.TeleportToPosition(servant, finalPosition);
@@ -210,7 +211,7 @@ internal static class CarrierService {
         EndPhase(coffin, servant);
       })
       .ThenWait(2f)
-      .Then(() => RemoveServant(servant))
+      .Then(() => RemoveCoffin(coffin))
       .Execute();
 
     AddAction(playerData, action);
@@ -298,15 +299,38 @@ internal static class CarrierService {
     }
   }
 
-  public static void ClearServants() {
-    var servants = GameSystems.EntityManager.CreateEntityQuery(
-      ComponentType.ReadOnly<ServantData>(),
-      ComponentType.ReadOnly<Follower>()
-    );
+  public static void ClearAll() {
+    var coffins = GameSystems.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<ServantCoffinstation>()).ToEntityArray(Allocator.Temp);
 
-    foreach (var servant in servants.ToEntityArray(Allocator.Temp)) {
-      RemoveServant(servant);
+    foreach (var coffin in coffins) {
+      RemoveCoffin(coffin);
     }
+
+    coffins.Dispose();
+  }
+
+  private static void RemoveCoffin(Entity coffin) {
+    if (Entity.Null.Equals(coffin) || !coffin.Has<ServantCoffinstation>()) return;
+
+    if (!coffin.Has<LocalTransform>()) return;
+
+    var position = coffin.Read<LocalTransform>().Position;
+
+    if (position.y != Height && position.y != LegacyHeight) return;
+
+    var servant = coffin.Read<ServantCoffinstation>().ConnectedServant._Entity;
+
+    if (Entity.Null.Equals(servant) || !servant.Has<Follower>()) return;
+
+    RemoveServant(servant);
+
+    var coffinBuffBuffer = coffin.ReadBuffer<BuffBuffer>();
+
+    foreach (var buff in coffinBuffBuffer) {
+      BuffService.TryRemoveBuff(coffin, buff.PrefabGuid);
+    }
+
+    coffin.Destroy();
   }
 
   private static void RemoveServant(Entity servant) {
@@ -321,6 +345,13 @@ internal static class CarrierService {
     _spawnedServants.Remove(userEntity.Read<User>().PlatformId);
 
     InventoryService.ClearInventory(servant);
+
+    var servantBuffBuffer = servant.ReadBuffer<BuffBuffer>();
+
+    foreach (var buff in servantBuffBuffer) {
+      BuffService.TryRemoveBuff(servant, buff.PrefabGuid);
+    }
+
     servant.Destroy();
   }
 }
