@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.6.4] - 2025-06-18
+
+### Changed
+- Coffins are now destroyed instead of using the LifeTime component
+- Added a cleanup routine to remove all carrier-related entities when the server starts, preventing leftovers from previous sessions
+
 ## [0.6.3] - 2025-06-17
 
 ### Fixed
