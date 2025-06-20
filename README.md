@@ -1,3 +1,5 @@
+# The update 0.6.6 **REQUIRES** the latest version of ScarletCore, so make sure to update it as well.
+
 # ScarletCarrier
 
 **ScarletCarrier** is a V Rising mod that adds a servant carrier system to help transport your items. The mod provides a convenient way to summon a personal servant that can carry items, with automatic inventory persistence between summons.

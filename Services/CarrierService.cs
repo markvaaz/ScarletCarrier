@@ -27,7 +27,7 @@ internal static class CarrierService {
   private static readonly PrefabGUID DespawnVisualBuff = new(1185694153);
   private static readonly PrefabGUID NeutralFaction = new(-1430861195);
 
-  private const float MaxDuration = 60f;
+  private const float MaxDuration = 3600f;
   private const float MaxDistance = 3f;
   private const float DialogInterval = 2f;
   private const float Height = 221f; // The height serve as a reference for despawning the coffin and servant.
@@ -97,7 +97,7 @@ internal static class CarrierService {
   }
 
   private static void CreateCoffin(PlayerData playerData) {
-    var coffin = UnitSpawnerService.ImmediateSpawn(CoffinPrefab, playerData.CharacterEntity.Position(), owner: Entity.Null, lifeTime: -1);
+    var coffin = UnitSpawnerService.ImmediateSpawn(CoffinPrefab, playerData.CharacterEntity.Position(), owner: playerData.CharacterEntity, lifeTime: -1);
     var position = playerData.CharacterEntity.Position();
     var servant = CreateServant(playerData, coffin);
 
@@ -159,24 +159,22 @@ internal static class CarrierService {
 
   private static void ConfigureServantBehavior(Entity servant, PlayerData playerData) {
     servant.With((ref AggroConsumer aggroConsumer) => {
-      aggroConsumer.Active._Value = false;
+      aggroConsumer.Active = new ModifiableBool(false);
     });
 
     servant.With((ref Aggroable aggroable) => {
-      aggroable.Value._Value = false;
-      aggroable.DistanceFactor._Value = 0f;
-      aggroable.AggroFactor._Value = 0f;
+      aggroable.Value = new ModifiableBool(false);
+      aggroable.DistanceFactor = new ModifiableFloat(0f);
+      aggroable.AggroFactor = new ModifiableFloat(0f);
     });
 
     servant.With((ref FactionReference factionReference) => {
-      factionReference.FactionGuid._Value = NeutralFaction;
+      factionReference.FactionGuid = new ModifiablePrefabGUID(NeutralFaction);
     });
 
     servant.With((ref Follower follower) => {
-      follower.Followed._Value = playerData.UserEntity;
+      follower.Followed = new ModifiableEntity(playerData.UserEntity);
     });
-
-    servant.Remove<ServantEquipment>();
 
     RemoveDisableComponents(servant);
     servant.SetTeam(playerData.CharacterEntity);

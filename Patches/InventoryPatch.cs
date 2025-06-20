@@ -23,13 +23,13 @@ internal static class MoveItemBetweenInventoriesSystemPatch {
     if (!GameSystems.Initialized) return;
     var entities = __instance.__query_133601321_0.ToEntityArray(Allocator.Temp);
     var events = __instance.__query_133601321_0.ToComponentDataArray<MoveItemBetweenInventoriesEvent>(Allocator.Temp);
+    var fromCharacters = __instance.__query_133601321_0.ToComponentDataArray<FromCharacter>(Allocator.Temp);
 
     try {
       for (var i = 0; i < events.Length; i++) {
         var moveItemEvent = events[i];
-
         var entity = entities[i];
-        var fromCharacter = entity.Read<FromCharacter>();
+        var fromCharacter = fromCharacters[i];
 
         if (!fromCharacter.Character.Has<PlayerCharacter>() || !fromCharacter.User.Has<User>()) continue;
 
@@ -49,7 +49,7 @@ internal static class MoveItemBetweenInventoriesSystemPatch {
           var item = GameSystems.PrefabCollectionSystem._PrefabGuidToEntityMap[itemBuffer.ItemType];
 
           if (!ItemService.IsValid(item) || itemBuffer.ItemEntity._Entity.Has<Equippable>()) {
-            GameSystems.EntityManager.DestroyEntity(entity);
+            entity.Destroy(true);
           }
         }
       }
@@ -114,6 +114,79 @@ internal static class ReactToInventoryChangedSystemPatch {
       return;
     } finally {
       query.Dispose();
+    }
+  }
+}
+
+[HarmonyPatch]
+internal static class EquipServantItemFromInventorySystemPatch {
+  [HarmonyPatch(typeof(EquipServantItemFromInventorySystem), nameof(EquipServantItemFromInventorySystem.OnUpdate))]
+  [HarmonyPrefix]
+  public static void Prefix(EquipServantItemFromInventorySystem __instance) {
+    var entities = __instance.EntityQueries[0].ToEntityArray(Allocator.Temp);
+    var events = __instance.EntityQueries[0].ToComponentDataArray<EquipServantItemFromInventoryEvent>(Allocator.Temp);
+
+    try {
+      var niem = GameSystems.NetworkIdSystem._NetworkIdLookupMap._NetworkIdToEntityMap;
+      for (var i = 0; i < events.Length; i++) {
+        var moveItemEvent = events[i];
+        var entity = entities[i];
+
+        if (!niem.TryGetValue(moveItemEvent.FromInventory, out Entity fromInventory)) continue;
+
+        if (!fromInventory.Has<Attach>()) continue;
+
+        var characterEntity = fromInventory.Read<Attach>().Parent;
+
+        if (!characterEntity.Has<PlayerCharacter>()) continue;
+
+        var userEntity = characterEntity.Read<PlayerCharacter>().UserEntity;
+        var user = userEntity.Read<User>();
+
+        if (!CarrierService.HasServant(user.PlatformId)) continue;
+
+        var servantEntity = CarrierService.GetServant(user.PlatformId);
+
+        if (!servantEntity.Has<NetworkId>() || !servantEntity.Read<NetworkId>().Equals(moveItemEvent.ToEntity)) continue;
+
+        entity.Destroy(true);
+      }
+    } catch (System.Exception ex) {
+      Log.Error($"Error in EquipServantItemFromInventorySystemPatch: {ex.Message}");
+    } finally {
+      entities.Dispose();
+      events.Dispose();
+    }
+  }
+
+  [HarmonyPatch(typeof(EquipmentTransferSystem), nameof(EquipmentTransferSystem.OnUpdate))]
+  [HarmonyPrefix]
+  public static void OnUpdatePrefix(EquipmentTransferSystem __instance) {
+    var entities = __instance.EntityQueries[0].ToEntityArray(Allocator.Temp);
+    var events = __instance.EntityQueries[0].ToComponentDataArray<EquipmentToEquipmentTransferEvent>(Allocator.Temp);
+    var fromCharacters = __instance.EntityQueries[0].ToComponentDataArray<FromCharacter>(Allocator.Temp);
+
+    try {
+      var niem = GameSystems.NetworkIdSystem._NetworkIdLookupMap._NetworkIdToEntityMap;
+      for (int i = 0; i < entities.Length; i++) {
+        var equipmentEvent = events[i];
+        var entity = entities[i];
+        var fromCharacter = fromCharacters[i];
+
+        if (!fromCharacter.Character.Has<PlayerCharacter>() || !fromCharacter.User.Has<User>()) continue;
+
+        var user = fromCharacter.User.Read<User>();
+
+        if (!CarrierService.HasServant(user.PlatformId)) continue;
+
+        if (!equipmentEvent.ServantToCharacter && niem.TryGetValue(equipmentEvent.ToEntity, out Entity servant) && servant.Has<Follower>()) {
+          entity.Destroy(true);
+        }
+      }
+    } finally {
+      entities.Dispose();
+      events.Dispose();
+      fromCharacters.Dispose();
     }
   }
 }

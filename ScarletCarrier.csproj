@@ -3,20 +3,20 @@
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>ScarletCarrier</AssemblyName>
     <Description>Scarlet Carrier</Description>
-    <Version>0.6.4</Version>
+    <Version>0.6.6</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
     <RootNamespace>ScarletCarrier</RootNamespace>
     <PackageId>ScarletCarrier</PackageId>
-    <AssemblyVersion>0.6.4.0</AssemblyVersion>
-    <FileVersion>0.6.4.0</FileVersion>
+    <AssemblyVersion>0.6.6.0</AssemblyVersion>
+    <FileVersion>0.6.6.0</FileVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.691" IncludeAssets="compile" />
     <PackageReference Include="BepInEx.Core" Version="6.0.0-be.691" IncludeAssets="compile" />
     <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*" />
     <PackageReference Include="VRising.Unhollowed.Client" Version="1.1.*" />
-    <PackageReference Include="ScarletCore" Version="1.0.5" />
+    <PackageReference Include="ScarletCore" Version="1.1.1" />
     <PackageReference Include="VRising.VampireCommandFramework" Version="0.10.*" />
   </ItemGroup>
 
@@ -27,7 +27,8 @@
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-		<Exec Command="copy &quot;$(TargetPath)&quot; &quot;C:\Program Files (x86)\Steam\steamapps\common\VRisingDedicatedServer\BepInEx\plugins&quot; " ContinueOnError="true" />
-    <Exec Command="start &quot;VRising Server&quot; cmd /c &quot;cd /d &quot;C:\Program Files (x86)\Steam\steamapps\common\VRisingDedicatedServer&quot; &amp; START_SERVER.bat&quot;" />
+    <Exec Command="copy &quot;$(TargetPath)&quot; &quot;C:\Program Files (x86)\Steam\steamapps\common\VRisingDedicatedServer\BepInEx\BloodpebblePlugins&quot; " ContinueOnError="true" />
+		<!-- <Exec Command="copy &quot;$(TargetPath)&quot; &quot;C:\Program Files (x86)\Steam\steamapps\common\VRisingDedicatedServer\BepInEx\plugins&quot; " ContinueOnError="true" /> -->
+    <!-- <Exec Command="start &quot;VRising Server&quot; cmd /c &quot;cd /d &quot;C:\Program Files (x86)\Steam\steamapps\common\VRisingDedicatedServer&quot; &amp; START_SERVER.bat&quot;" /> -->
 	</Target>
 </Project>
