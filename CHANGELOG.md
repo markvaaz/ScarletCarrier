@@ -1,6 +1,12 @@
 # Changelog
 
-## [0.6.6] - 2025-06-18
+## [0.7.0] - 2025-06-18
+
+### Added
+- Customizable carrier appearance system
+- `.carrier list` command to view available appearances
+- `.carrier <number>` command to change carrier appearance
+- Personal appearance settings that persist between summons
 
 ### Fixed
 - Fixed error `typeIndexInArchetype was -1 for NetworkComponentIndex: 82. networkSnapshotType: 355`
