@@ -1,4 +1,4 @@
-# The update 0.6.6 **REQUIRES** the latest version of ScarletCore, so make sure to update it as well.
+# The update 0.7.0+ **REQUIRES** the latest version of ScarletCore, so make sure to update it as well.
 
 # ScarletCarrier
 
@@ -25,17 +25,23 @@ When you summon a carrier, your personal servant appears and can store items in 
 * Automatic inventory persistence between summons
 * Interactive dialogue system
 * Simple command interface
+* Customizable carrier appearance with multiple options
 
 ## Upcoming Features
 
 * Following the player (maybe or maybe not)
 * Storage for instanced items
-* Customizable carrier appearance
 
 ## Commands
 
 * `.carrier call` - Summons your carrier servant
 * `.carrier dismiss` - Dismisses your carrier early
+* `.carrier list` - Lists all available carrier appearances
+* `.carrier <number>` - Changes the appearance of your carrier servant to the specified number from the list
+
+### Appearance System
+
+Your carrier's appearance can be customized using various predefined options. Each player can have their own unique appearance setting that persists between summons. Use `.carrier list` to see all available appearances with their corresponding numbers, then use `.carrier <number>` to apply your preferred look.
 
 ## Installation
 
