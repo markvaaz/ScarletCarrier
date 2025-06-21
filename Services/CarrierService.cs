@@ -20,14 +20,64 @@ internal static class CarrierService {
   private static readonly Dictionary<ulong, List<Entity>> _spawnedServants = [];
   private static readonly Dictionary<ulong, List<ActionId>> _spawnSequences = [];
 
+  public static readonly PrefabGUID[] AppearancePrefabs = [
+    new(-450600397),  // Bomber
+    new(2142021685),  // Alchemist
+    new(40217214),    // Lurker
+    new(-1099047820), // Night Maiden
+    new(-1108748448), // Viper
+    new(-274383877),  // Striker
+    new(-383158562),  // Lightweaver
+    new(1649578802),  // Paladin
+    new(-1213645419), // Sentry Officer
+    new(565869317),   // Tractor Beamer
+    new(-1773935659), // Militia Veteran
+    new(1502148822),  // Exsanguinator
+    new(-924080115),  // Tazer
+    new(-1788957652), // Nun
+    new(-444945115),  // Sister
+    new(1218339832),  // Cleric
+    new(-823557242),  // Devoted
+    new(-442412464),  // Slave Master
+    new(-1416355128), // Ruffian
+    new(-1192403515), // Villager Female
+    new(-2085282780), // Villager Male
+    new(-1897484769), // Ace Incinerator
+  ];
+
+  public static readonly string[] AppearanceNames = [
+    "Bomber",
+    "Alchemist",
+    "Lurker",
+    "Night Maiden",
+    "Viper",
+    "Striker",
+    "Lightweaver",
+    "Paladin",
+    "Sentry Officer",
+    "Tractor Beamer",
+    "Militia Veteran",
+    "Exsanguinator",
+    "Tazer",
+    "Nun",
+    "Sister",
+    "Cleric",
+    "Devoted",
+    "Slave Master",
+    "Ruffian",
+    "Villager (Female)",
+    "Villager (Male)",
+    "~*~~Ace Incinerator~".Format(["green", RichTextFormatter.HighlightColor]),
+  ];
+
   private static readonly PrefabGUID CoffinPrefab = new(723455393);
-  private static readonly PrefabGUID ServantPrefab = new(-450600397);
+  private static readonly PrefabGUID DefaultServantPrefab = new(2142021685);
   private static readonly PrefabGUID SpawnAbility = new(2072201164);
   private static readonly PrefabGUID DespawnAbility = new(-597709516);
   private static readonly PrefabGUID DespawnVisualBuff = new(1185694153);
   private static readonly PrefabGUID NeutralFaction = new(-1430861195);
 
-  private const float MaxDuration = 3600f;
+  private const float MaxDuration = 60f;
   private const float MaxDistance = 3f;
   private const float DialogInterval = 2f;
   private const float Height = 221f; // The height serve as a reference for despawning the coffin and servant.
@@ -43,6 +93,7 @@ internal static class CarrierService {
     { new PrefabGUID(-2061378836), 3f }    // Heart explosion
   };
 
+  public const string CustomAppearances = "CustomAppearances";
   private static readonly string[] GreetingsDialogLines = [
     "Hey there {playerName}!",
     "I'm here to help carry your stuff.",
@@ -75,7 +126,7 @@ internal static class CarrierService {
       .Then(() => PrepareToLeave(coffin))
       .ThenWait(2)
       .Then(() => EndPhase(coffin, servant))
-      .ThenWait(2)
+      .ThenWait(3)
       .Then(() => RemoveCoffin(coffin))
       .Execute();
 
@@ -137,7 +188,14 @@ internal static class CarrierService {
   }
 
   private static Entity CreateServant(PlayerData playerData, Entity coffin) {
-    var servant = UnitSpawnerService.ImmediateSpawn(ServantPrefab, coffin.Position(), owner: playerData.CharacterEntity, lifeTime: -1f);
+    var customAppearancesList = Database.Get<Dictionary<ulong, string>>(CustomAppearances) ?? [];
+    var customServantPrefab = DefaultServantPrefab;
+
+    if (customAppearancesList.TryGetValue(playerData.PlatformId, out var guidHash) && PrefabGUID.TryParse(guidHash, out var customServant)) {
+      customServantPrefab = customServant;
+    }
+
+    var servant = UnitSpawnerService.ImmediateSpawn(customServantPrefab, playerData.Position, owner: playerData.CharacterEntity, lifeTime: -1f);
 
     ApplyServantBuffs(servant);
     ConfigureServantBehavior(servant, playerData);
@@ -181,7 +239,7 @@ internal static class CarrierService {
   }
 
   private static void PositionServant(Entity servant, PlayerData playerData) {
-    var characterPosition = playerData.CharacterEntity.Position();
+    var characterPosition = playerData.Position;
     var aimPosition = playerData.CharacterEntity.Read<EntityAimData>().AimPosition;
 
     var distance = math.distance(characterPosition, aimPosition);
@@ -342,7 +400,7 @@ internal static class CarrierService {
 
     _spawnedServants.Remove(userEntity.Read<User>().PlatformId);
 
-    InventoryService.ClearInventory(servant);
+    ClearInventory(servant);
 
     var servantBuffBuffer = servant.ReadBuffer<BuffBuffer>();
 
@@ -351,5 +409,16 @@ internal static class CarrierService {
     }
 
     servant.Destroy();
+  }
+
+  public static void ClearInventory(Entity entity) {
+    if (InventoryUtilities.TryGetInventoryEntity(GameSystems.EntityManager, entity, out var inventoryEntity)) {
+      var items = InventoryService.GetInventoryItems(entity);
+      var sgm = GameSystems.ServerGameManager;
+
+      foreach (var item in items) {
+        sgm.TryRemoveInventoryItem(inventoryEntity, item.ItemType, 999999999);
+      }
+    }
   }
 }
