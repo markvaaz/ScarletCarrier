@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.8.0] - 2025-07-03
+
+### Added
+- **Carrier Following System**: Carriers can now follow the player when summoned
+  - Use `.carrier follow` to enable following behavior
+  - Use `.carrier stop` to disable following and make carrier stay in place
+- **Emote Controls**: Added intuitive emote-based carrier management
+  - 👍 - Summon/call your carrier
+  - 👎 - Dismiss your carrier
+  - 👉 - Toggle follow/stay behavior
+
+### Changed
+- **Removed automatic despawn**: Carriers no longer automatically disappear after 60 seconds
+- Carriers now remain active until manually dismissed by the player (or server restart)
+
 ## [0.7.0] - 2025-06-18
 
 ### Added
