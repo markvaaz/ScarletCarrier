@@ -6,6 +6,7 @@ using ScarletCore.Data;
 using VampireCommandFramework;
 using ScarletCore.Events;
 using ScarletCarrier.Services;
+using ScarletCore.Systems;
 
 namespace ScarletCarrier;
 
@@ -28,13 +29,17 @@ public class Plugin : BasePlugin {
     _harmony = new Harmony(MyPluginInfo.PLUGIN_GUID);
     _harmony.PatchAll(System.Reflection.Assembly.GetExecutingAssembly());
 
+    Database = new Database(MyPluginInfo.PLUGIN_GUID);
+
     EventManager.OnInitialize += (_, _) => {
       Log.LogInfo("Removing carrier entities...");
       CarrierService.ClearAll();
       Log.LogInfo("Carrier entities removed.");
     };
 
-    Database = new Database(MyPluginInfo.PLUGIN_GUID);
+    // For relead purpose
+    if (GameSystems.Initialized) CarrierService.ClearAll();
+
     CommandRegistry.RegisterAll();
   }
 
