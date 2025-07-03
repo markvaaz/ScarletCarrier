@@ -14,30 +14,41 @@
 
 ## How It Works
 
-When you summon a carrier, your personal servant appears and can store items in its inventory. After 60 seconds, the servant automatically despawns, but all items are saved and will be restored when you summon your carrier again.
+When you summon a carrier, your personal servant appears and can store items in its inventory. The carrier will remain active until you manually dismiss it or use emote controls. All items are automatically saved and will be restored when you summon your carrier again.
 
 **Note:** Instanced items (items with unique properties like enchantments or durability) cannot be stored in the carrier for now. I'll be adding a system to handle these items in the future. *(Maybe)*
 
 ## Features
 
 * Summon a servant that can carry items
-* 60-second duration with manual dismiss option  
+* Manual dismiss and emote controls for carrier management
 * Automatic inventory persistence between summons
 * Interactive dialogue system
 * Simple command interface
 * Customizable carrier appearance with multiple options
+* **Carrier following system** - Your carrier can follow you around or stay in place
+* **Emote controls** - Use emotes for quick carrier management
 
 ## Upcoming Features
 
-* Following the player (maybe or maybe not)
 * Storage for instanced items
 
 ## Commands
 
 * `.carrier call` - Summons your carrier servant
 * `.carrier dismiss` - Dismisses your carrier early
+* `.carrier follow` - Makes your carrier follow you around
+* `.carrier stop` - Makes your carrier stay in place
 * `.carrier list` - Lists all available carrier appearances
 * `.carrier <number>` - Changes the appearance of your carrier servant to the specified number from the list
+
+### Emote Controls
+
+For quick and intuitive carrier management, you can use these emotes:
+
+* 👍 **Yes** - Summon your carrier
+* 👎 **No** - Dismiss your carrier
+* 👉 **Point** - Toggle between follow/stay behavior
 
 ### Appearance System
 
