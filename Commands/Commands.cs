@@ -8,19 +8,17 @@ namespace ScarletCarrier.Commands;
 
 [CommandGroup("carrier", "c")]
 public static class CarrierCommands {
-
   [Command("call", shortHand: "c")]
   public static void SummonCommand(ChatCommandContext ctx) {
-    if (!PlayerService.TryGetById(ctx.User.PlatformId, out var playerData)) {
-      ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
-    }
+    var platformId = ctx.User.PlatformId;
 
-    if (CarrierService.HasServant(playerData.PlatformId)) {
-      ctx.Reply($"You already have a ~carrier~ summoned.".FormatError());
+    if (CarrierService.HasServant(platformId)) {
+      CarrierService.TeleportToPlayer(platformId);
+      ctx.Reply($"Your ~carrier~ has been summoned!".Format());
       return;
     }
 
-    CarrierService.Spawn(playerData);
+    CarrierService.Spawn(platformId);
 
     ctx.Reply($"Your ~carrier~ has been summoned!".Format());
     ctx.Reply($"Use ~.carrier dismiss~ to dismiss it early.".Format());
@@ -29,18 +27,42 @@ public static class CarrierCommands {
 
   [Command("dismiss", shortHand: "d")]
   public static void DismissCommand(ChatCommandContext ctx) {
-    if (!PlayerService.TryGetById(ctx.User.PlatformId, out var playerData)) {
-      ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
-    }
+    var platformId = ctx.User.PlatformId;
 
-    if (!CarrierService.HasServant(playerData.PlatformId)) {
+    if (!CarrierService.HasServant(platformId)) {
       ctx.Reply($"You do not have a ~carrier~ summoned.".FormatError());
       return;
     }
 
-    CarrierService.Dismiss(playerData);
+    CarrierService.Dismiss(platformId);
 
     ctx.Reply($"Your ~carrier~ has been dismissed.".Format());
+  }
+
+  [Command("follow", shortHand: "f")]
+  public static void FollowCommand(ChatCommandContext ctx) {
+    CarrierService.StartFollow(ctx.User.PlatformId);
+
+    ctx.Reply($"Your ~carrier~ will now follow you.".Format());
+  }
+
+  [Command("stop", shortHand: "s")]
+  public static void StopCommand(ChatCommandContext ctx) {
+    var platformId = ctx.User.PlatformId;
+
+    if (!CarrierService.HasServant(platformId)) {
+      ctx.Reply($"You do not have a ~carrier~ summoned.".FormatError());
+      return;
+    }
+
+    if (!CarrierService.IsFollowing(platformId)) {
+      ctx.Reply($"Your ~carrier~ is not following you.".FormatError());
+      return;
+    }
+
+    CarrierService.StopFollow(platformId);
+
+    ctx.Reply($"Your ~carrier~ will no longer follow you.".Format());
   }
 
   [Command("list", shortHand: "l")]
@@ -72,6 +94,7 @@ public static class CarrierCommands {
     ctx.Reply("Use ~.carrier <number>~ to change your carrier's appearance.".Format());
   }
 }
+
 
 public static class CarrierAppearanceCommand {
   [Command("carrier", "c")]
