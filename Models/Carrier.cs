@@ -11,19 +11,21 @@ using Stunlock.Core;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Transforms;
+using Animation;
 
 namespace ScarletCarrier.Models;
 
-internal class Carrier {
+internal class Carrier(PlayerData ownerData) {
   private static Database Database => Plugin.Database;
 
   // Constants
   private const float MaxSpawnDistance = 3f;
   private const float MaxTeleportDistance = 15f;
   private const float DialogInterval = 2f;
-  private const float Height = 221f;
+  public const float Height = 221f;
   private const int MaxPositionHistory = 8;
+  private const float ServantSpeedMultiplier = 0.95f;
+  public const string Id = "__ScarletCarrier__";
 
   // Prefabs and data
   private static readonly PrefabGUID CoffinPrefab = new(723455393);
@@ -58,12 +60,11 @@ internal class Carrier {
   private const string StartFollowDialog = "Right behind you!";
   private const string StopFollowDialog = "I'll wait here for you.";
   private const string CarrierNameFormat = "{playerName}'s Carrier";
-  private const float ServantSpeedMultiplier = 0.95f;
 
   // Instance properties
   public Entity CoffinEntity { get; private set; }
   public Entity ServantEntity { get; private set; }
-  public PlayerData OwnerData { get; private set; }
+  public PlayerData OwnerData { get; private set; } = ownerData;
   public ulong PlatformId => OwnerData.PlatformId;
 
   // Follow system state
@@ -81,19 +82,18 @@ internal class Carrier {
   public bool IsFollowing => _isFollowing;
   public bool IsDismissInProgress => _dismissInProgress;
 
-  public Carrier(PlayerData ownerData) {
-    OwnerData = ownerData;
-  }
-
   public void Create() {
-    var position = OwnerData.CharacterEntity.Position();
+    var position = OwnerData.Position;
+
     CoffinEntity = UnitSpawnerService.ImmediateSpawn(CoffinPrefab, position, owner: OwnerData.CharacterEntity, lifeTime: -1);
 
-    CreateServant();
+    CoffinEntity.AddWith((ref NameableInteractable nameable) => {
+      nameable.Name = new FixedString64Bytes(Id);
+    });
 
+    CreateServant();
     TeleportService.TeleportToPosition(CoffinEntity, new float3(position.x, Height, position.z));
     CoffinEntity.SetTeam(OwnerData.CharacterEntity);
-
     ConfigureCoffinServantConnection();
     RemoveDisableComponents(CoffinEntity);
   }
@@ -107,6 +107,10 @@ internal class Carrier {
     }
 
     ServantEntity = UnitSpawnerService.ImmediateSpawn(customServantPrefab, OwnerData.Position, owner: OwnerData.CharacterEntity, lifeTime: -1f);
+
+    ServantEntity.AddWith((ref NameableInteractable nameable) => {
+      nameable.Name = new FixedString64Bytes(Id);
+    });
 
     ApplyServantBuffs();
     ConfigureServantBehavior();
@@ -211,7 +215,6 @@ internal class Carrier {
   public void RunDialogSequence() {
     if (Entity.Null.Equals(CoffinEntity)) return;
 
-    // Cancel any existing dialog sequence
     StopCurrentDialog();
 
     var index = 0;
@@ -230,7 +233,6 @@ internal class Carrier {
   public void PrepareToLeave() {
     if (Entity.Null.Equals(CoffinEntity)) return;
 
-    // Cancel any existing dialog and show prepare to leave message
     StopCurrentDialog();
 
     _dialogSequenceAction = ActionScheduler.CreateSequence()
@@ -241,7 +243,6 @@ internal class Carrier {
   public void EndPhase() {
     if (Entity.Null.Equals(CoffinEntity) || Entity.Null.Equals(ServantEntity)) return;
 
-    // Cancel any existing dialog and show farewell message
     StopCurrentDialog();
 
     _dialogSequenceAction = ActionScheduler.CreateSequence()
@@ -253,7 +254,6 @@ internal class Carrier {
       .Execute();
   }
 
-  // Method to stop current dialog sequence
   private void StopCurrentDialog() {
     if (_dialogSequenceAction != default) {
       ActionScheduler.CancelAction(_dialogSequenceAction);
@@ -261,23 +261,10 @@ internal class Carrier {
     }
   }
 
-  // Public method to stop any active dialog
   public void StopDialog() {
     StopCurrentDialog();
   }
 
-  // Method to show custom dialog (cancels any existing dialog first)
-  public void ShowCustomDialog(string message) {
-    if (Entity.Null.Equals(CoffinEntity)) return;
-
-    StopCurrentDialog();
-
-    _dialogSequenceAction = ActionScheduler.CreateSequence()
-      .Then(() => SetDialog(message))
-      .Execute();
-  }
-
-  // Method to show custom dialog and restore name after a delay
   public void ShowCustomDialogWithNameRestore(string message, float dialogDuration = 1.5f) {
     if (Entity.Null.Equals(CoffinEntity)) return;
 
@@ -290,7 +277,6 @@ internal class Carrier {
       .Execute();
   }
 
-  // Follow system methods
   public void StartFollow() {
     if (_isFollowing || _dismissInProgress) return;
 
@@ -308,7 +294,6 @@ internal class Carrier {
       FollowPlayer();
     });
 
-    // Show follow start dialog using unified dialog system
     ShowCustomDialogWithNameRestore(StartFollowDialog);
   }
 
@@ -324,7 +309,6 @@ internal class Carrier {
     StopSeekingPosition();
     _positionHistory.Clear();
 
-    // Show follow stop dialog using unified dialog system
     ShowCustomDialogWithNameRestore(StopFollowDialog);
   }
 
@@ -441,24 +425,12 @@ internal class Carrier {
 
   public void Destroy() {
     CancelAllActions();
-
-    if (!Entity.Null.Equals(CoffinEntity)) {
-      RemoveCoffin();
-    }
-
-    if (!Entity.Null.Equals(ServantEntity)) {
-      RemoveServant();
-    }
+    RemoveCoffin();
+    RemoveServant();
   }
 
   private void RemoveCoffin() {
-    if (Entity.Null.Equals(CoffinEntity) || !CoffinEntity.Has<ServantCoffinstation>()) return;
-
-    if (!CoffinEntity.Has<LocalTransform>()) return;
-
-    var position = CoffinEntity.Read<LocalTransform>().Position;
-
-    if (position.y != Height) return;
+    if (CoffinEntity.IsNull() || !CoffinEntity.Exists()) return;
 
     var coffinBuffBuffer = CoffinEntity.ReadBuffer<BuffBuffer>();
 
@@ -471,7 +443,7 @@ internal class Carrier {
   }
 
   private void RemoveServant() {
-    if (Entity.Null.Equals(ServantEntity) || !ServantEntity.Has<Follower>()) return;
+    if (ServantEntity.IsNull() || !ServantEntity.Exists()) return;
 
     ServantEntity.Remove<Follower>();
     ClearInventory();
@@ -487,8 +459,7 @@ internal class Carrier {
   }
 
   public bool IsValid() {
-    return !Entity.Null.Equals(CoffinEntity) && !Entity.Null.Equals(ServantEntity) &&
-           CoffinEntity.Exists() && ServantEntity.Exists();
+    return !Entity.Null.Equals(CoffinEntity) && !Entity.Null.Equals(ServantEntity) && CoffinEntity.Exists() && ServantEntity.Exists();
   }
 
   // Action management methods
@@ -547,21 +518,6 @@ internal class Carrier {
 
     AddAction(dismissAction);
     return dismissAction;
-  }
-
-  public ActionId CreateTimeoutSequence(float maxDuration) {
-    // MessageService.Send(OwnerData.User, "Your ~carrier~ has reached its time limit and will now despawn.".Format());
-    var timeoutAction = ActionScheduler.CreateSequence()
-      .ThenWait(maxDuration - 8f)
-      .Then(PrepareToLeave)
-      .ThenWait(2f)
-      .Then(EndPhase)
-      .ThenWait(2f)
-      .Then(Destroy)
-      .Execute();
-
-    AddAction(timeoutAction);
-    return timeoutAction;
   }
 
   // Private helper methods for dialog and interaction management
