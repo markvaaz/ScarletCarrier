@@ -15,10 +15,7 @@ using Unity.Transforms;
 namespace ScarletCarrier.Services;
 
 internal static class CarrierService {
-  // Carriers management - using instances instead of dictionaries
   private static readonly Dictionary<ulong, Carrier> _activeCarriers = [];
-
-  // Keep appearance data for external access
   public static readonly PrefabGUID[] AppearancePrefabs = [
     new(-450600397),  // Bomber
     new(2142021685),  // Alchemist
@@ -69,26 +66,21 @@ internal static class CarrierService {
     "~*~~Ace Incinerator~".Format(["green", RichTextFormatter.HighlightColor]),
   ];
 
-  // Legacy constants for external access
   private static readonly PrefabGUID SpawnAbility = new(2072201164);
   public const string CustomAppearances = "CustomAppearances";
-  private const float Height = 221f;
 
   public static void Spawn(ulong platformId) {
     var playerData = platformId.GetPlayerData();
 
-    // Check if carrier already exists or is being dismissed
     if (_activeCarriers.TryGetValue(playerData.PlatformId, out var existingCarrier)) {
       if (existingCarrier.IsDismissInProgress) {
         SendSCT(playerData);
         return;
       }
       TeleportToPlayer(platformId);
-      // Carrier already exists and is active
       return;
     }
 
-    // Cast spawn ability and create new carrier
     AbilityService.CastAbility(playerData.CharacterEntity, SpawnAbility);
 
     var carrier = new Carrier(playerData);
@@ -104,15 +96,14 @@ internal static class CarrierService {
 
     if (!_activeCarriers.TryGetValue(playerData.PlatformId, out var carrier)) {
       SendSCT(playerData);
-      return; // No carrier to dismiss
+      return;
     }
 
     if (carrier.IsDismissInProgress) {
       SendSCT(playerData);
-      return; // Already being dismissed
+      return;
     }
 
-    // Create dismiss sequence and remove from active carriers when done
     carrier.CreateDismissSequence(() => _activeCarriers.Remove(playerData.PlatformId));
   }
 
@@ -156,13 +147,11 @@ internal static class CarrierService {
   }
 
   public static void ClearAll() {
-    // Clear all active carriers
     foreach (var carrier in _activeCarriers.Values) {
       carrier.Destroy();
     }
     _activeCarriers.Clear();
 
-    // Clear any remaining coffins in the world that might have been left behind
     var coffins = GameSystems.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<ServantCoffinstation>()).ToEntityArray(Allocator.Temp);
 
     foreach (var coffin in coffins) {
@@ -175,11 +164,12 @@ internal static class CarrierService {
   private static void ClearCoffinFromWorld(Entity coffin) {
     if (Entity.Null.Equals(coffin) || !coffin.Has<ServantCoffinstation>()) return;
 
-    if (!coffin.Has<LocalTransform>()) return;
+    if (!coffin.Has<NameableInteractable>() || !coffin.Has<LocalTransform>()) return;
 
     var position = coffin.Read<LocalTransform>().Position;
+    var id = coffin.Read<NameableInteractable>().Name.Value;
 
-    if (position.y != Height) return;
+    if (position.y != Carrier.Height && id != Carrier.Id) return;
 
     var servant = coffin.Read<ServantCoffinstation>().ConnectedServant._Entity;
 
@@ -201,15 +191,7 @@ internal static class CarrierService {
 
     servant.Remove<Follower>();
 
-    // Clear inventory
-    if (InventoryUtilities.TryGetInventoryEntity(GameSystems.EntityManager, servant, out var inventoryEntity)) {
-      var items = InventoryService.GetInventoryItems(servant);
-      var sgm = GameSystems.ServerGameManager;
-
-      foreach (var item in items) {
-        sgm.TryRemoveInventoryItem(inventoryEntity, item.ItemType, 999999999);
-      }
-    }
+    InventoryService.ClearInventory(servant);
 
     var servantBuffBuffer = servant.ReadBuffer<BuffBuffer>();
 
