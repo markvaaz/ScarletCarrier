@@ -2,7 +2,7 @@
   "name": "ScarletCarrier",
   "version_number": "0.8.0",
   "website_url": "https://github.com/markvaaz/ScarletCarrier",
-  "description": "Summon servants with different appearances to carry your items!",
+  "description": "Summon a servant that follows you and carries your items!",
   "dependencies": [
     "BepInEx-BepInExPack_V_Rising-1.733.2",
     "ScarletMods-ScarletCore-1.1.5"
