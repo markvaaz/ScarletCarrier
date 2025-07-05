@@ -61,19 +61,16 @@ internal class Carrier(PlayerData ownerData) {
   private const string StopFollowDialog = "I'll wait here for you.";
   private const string CarrierNameFormat = "{playerName}'s Carrier";
 
-  // Instance properties
   public Entity CoffinEntity { get; private set; }
   public Entity ServantEntity { get; private set; }
   public PlayerData OwnerData { get; private set; } = ownerData;
   public ulong PlatformId => OwnerData.PlatformId;
 
-  // Follow system state
   private List<float3> _positionHistory = [];
   private ActionId _followAction;
   private float3 _currentTargetPosition;
   private bool _isFollowing;
 
-  // Action management
   private List<ActionId> _activeActions = [];
   private ActionId _spawnSequenceAction;
   private ActionId _dialogSequenceAction;
