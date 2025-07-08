@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1] - 2025-07-08
+
+### Fixed
+- **Equipment Transfer Prevention**: Added protection against transferring equipped items directly from player to carrier inventory
+- Prevents players from bypassing equipment restrictions by unequipping items directly into carrier storage
+- Previously this protection existed but would delete the transferred item - now it simply blocks the transfer
+
 ## [0.8.0] - 2025-07-03
 
 ### Added

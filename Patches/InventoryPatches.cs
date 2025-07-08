@@ -119,6 +119,40 @@ internal static class ReactToInventoryChangedSystemPatch {
 }
 
 [HarmonyPatch]
+internal static class UnEquipItemSystemPatch {
+  private static readonly Database Database = Plugin.Database;
+  [HarmonyPatch(typeof(UnEquipItemSystem), nameof(UnEquipItemSystem.OnUpdate))]
+  [HarmonyPrefix]
+  public static void Prefix(UnEquipItemSystem __instance) {
+    if (!GameSystems.Initialized) return;
+    var entities = __instance._Query.ToEntityArray(Allocator.Temp);
+
+    try {
+      foreach (var entity in entities) {
+        var fromCharacter = entity.Read<FromCharacter>();
+        var unequipEvent = entity.Read<UnequipItemEvent>();
+
+        if (!fromCharacter.Character.Has<PlayerCharacter>() || !fromCharacter.User.Has<User>()) continue;
+
+        var user = fromCharacter.User.Read<User>();
+
+        if (!CarrierService.HasServant(user.PlatformId)) continue;
+
+        var servantEntity = CarrierService.GetServant(user.PlatformId);
+
+        if (!servantEntity.Has<NetworkId>() || !servantEntity.Read<NetworkId>().Equals(unequipEvent.ToInventory)) continue;
+
+        entity.Destroy(true);
+      }
+    } catch (System.Exception ex) {
+      Log.Error($"Error in UnEquipItemSystemPatch: {ex.Message}");
+    } finally {
+      entities.Dispose();
+    }
+  }
+}
+
+[HarmonyPatch]
 internal static class EquipServantItemFromInventorySystemPatch {
   [HarmonyPatch(typeof(EquipServantItemFromInventorySystem), nameof(EquipServantItemFromInventorySystem.OnUpdate))]
   [HarmonyPrefix]
