@@ -37,6 +37,10 @@ public static class EmoteSystemPatch {
           continue;
         }
 
+        if (Plugin.Database.Get<List<ulong>>("DisabledEmotes")?.Contains(steamId) == true) {
+          continue;
+        }
+
         action(steamId);
       }
     } catch (Exception ex) {
