@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace ScarletCarrier.Commands;
 
-[CommandGroup("carrier", "c")]
+[CommandGroup("carrier", "car")]
 public static class CarrierCommands {
   [Command("call", shortHand: "c")]
   public static void SummonCommand(ChatCommandContext ctx) {
@@ -65,13 +65,23 @@ public static class CarrierCommands {
     ctx.Reply($"Your ~carrier~ will no longer follow you.".Format());
   }
 
+  [Command("toggle emotes", shortHand: "te")]
+  public static void ToggleEmotesCommand(ChatCommandContext ctx) {
+    var disabledEmotes = Plugin.Database.Get<List<ulong>>("DisabledEmotes") ?? [];
+    var platformId = ctx.User.PlatformId;
+
+    if (disabledEmotes.Contains(platformId)) {
+      disabledEmotes.Remove(platformId);
+      ctx.Reply($"~Carrier emotes enabled~ for you.".Format());
+    } else {
+      disabledEmotes.Add(platformId);
+      ctx.Reply($"~Carrier emotes disabled~ for you.".FormatError());
+    }
+    Plugin.Database.Save("DisabledEmotes", disabledEmotes);
+  }
+
   [Command("list", shortHand: "l")]
   public static void AppearanceListCommand(ChatCommandContext ctx) {
-    if (!PlayerService.TryGetById(ctx.User.PlatformId, out var playerData)) {
-      ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
-      return;
-    }
-
     var names = CarrierService.AppearanceNames;
     if (names.Length == 0) {
       ctx.Reply($"No appearances found.".FormatError());
@@ -93,11 +103,8 @@ public static class CarrierCommands {
 
     ctx.Reply("Use ~.carrier <number>~ to change your carrier's appearance.".Format());
   }
-}
 
-
-public static class CarrierAppearanceCommand {
-  [Command("carrier", "c")]
+  [Command("appearance", shortHand: "a")]
   public static void AppearanceCommand(ChatCommandContext ctx, int number) {
     if (!PlayerService.TryGetById(ctx.User.PlatformId, out var playerData)) {
       ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
