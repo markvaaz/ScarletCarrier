@@ -27,7 +27,7 @@ When you summon a carrier, your personal servant appears and can store items in 
 * Simple command interface
 * Customizable carrier appearance with multiple options
 * **Carrier following system** - Your carrier can follow you around or stay in place
-* **Emote controls** - Use emotes for quick carrier management
+* **Emote controls** - Use emotes for quick carrier management (can be toggled off)
 
 ## Upcoming Features
 
@@ -35,16 +35,17 @@ When you summon a carrier, your personal servant appears and can store items in 
 
 ## Commands
 
-* `.carrier call` - Summons your carrier servant
-* `.carrier dismiss` - Dismisses your carrier early
-* `.carrier follow` - Makes your carrier follow you around
-* `.carrier stop` - Makes your carrier stay in place
-* `.carrier list` - Lists all available carrier appearances
-* `.carrier <number>` - Changes the appearance of your carrier servant to the specified number from the list
+* `.carrier call` / `.car c` - Summons your carrier servant
+* `.carrier dismiss` / `.car d` - Dismisses your carrier early
+* `.carrier follow` / `.car f` - Makes your carrier follow you around
+* `.carrier stop` / `.car s` - Makes your carrier stay in place
+* `.carrier list` / `.car l` - Lists all available carrier appearances
+* `.carrier appearance <number>` / `.car a <number>` - Changes the appearance of your carrier servant to the specified number from the list
+* `.carrier toggle emotes` / `.car te` - Toggles emote controls on/off for your carrier
 
 ### Emote Controls
 
-For quick and intuitive carrier management, you can use these emotes:
+For quick and intuitive carrier management, you can use these emotes (can be disabled with `.carrier toggle emotes`):
 
 * 👍 **Yes** - Summon your carrier
 * 👎 **No** - Dismiss your carrier
@@ -52,7 +53,7 @@ For quick and intuitive carrier management, you can use these emotes:
 
 ### Appearance System
 
-Your carrier's appearance can be customized using various predefined options. Each player can have their own unique appearance setting that persists between summons. Use `.carrier list` to see all available appearances with their corresponding numbers, then use `.carrier <number>` to apply your preferred look.
+Your carrier's appearance can be customized using various predefined options. Each player can have their own unique appearance setting that persists between summons. Use `.carrier list` to see all available appearances with their corresponding numbers, then use `.carrier appearance <number>` to apply your preferred look.
 
 ## Installation
 
