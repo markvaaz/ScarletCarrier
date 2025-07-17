@@ -31,7 +31,6 @@ internal class Carrier(PlayerData ownerData) {
   private static readonly PrefabGUID CoffinPrefab = new(723455393);
   private static readonly PrefabGUID DefaultServantPrefab = new(2142021685);
   private static readonly PrefabGUID SpawnAbility = new(2072201164);
-  private static readonly PrefabGUID AutoLootAbility = new(165220777);
   private static readonly PrefabGUID DespawnAbility = new(-1446310610);
   private static readonly PrefabGUID NeutralFaction = new(-1430861195);
   private static readonly PrefabGUID MountedBuff = new(-978792376);
@@ -509,7 +508,6 @@ internal class Carrier(PlayerData ownerData) {
       .ThenWait(0.2f)
       .Then(() => {
         AbilityService.CastAbility(ServantEntity, DespawnAbility);
-        UnitSpawnerService.ImmediateSpawn(new(191587271), ServantEntity.Position(), lifeTime: 0.1f);
       })
       .ThenWaitFrames(15)
       .Then(() => {
