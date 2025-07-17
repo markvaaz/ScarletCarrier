@@ -31,11 +31,14 @@ internal class Carrier(PlayerData ownerData) {
   private static readonly PrefabGUID CoffinPrefab = new(723455393);
   private static readonly PrefabGUID DefaultServantPrefab = new(2142021685);
   private static readonly PrefabGUID SpawnAbility = new(2072201164);
-  private static readonly PrefabGUID DespawnAbility = new(-597709516);
-  private static readonly PrefabGUID DespawnVisualBuff = new(1185694153);
+  private static readonly PrefabGUID AutoLootAbility = new(165220777);
+  private static readonly PrefabGUID DespawnAbility = new(-1446310610);
   private static readonly PrefabGUID NeutralFaction = new(-1430861195);
   private static readonly PrefabGUID MountedBuff = new(-978792376);
-
+  private static readonly PrefabGUID[] DespawnVisualBuffs = [
+    new(2127839743),
+    new(1880224358)
+  ];
   private static readonly PrefabGUID[] ServantPermaBuffs = [
     new(-480024072), // Invulnerable Buff
     new(1934061152), // Disable aggro
@@ -241,14 +244,8 @@ internal class Carrier(PlayerData ownerData) {
     if (Entity.Null.Equals(CoffinEntity) || Entity.Null.Equals(ServantEntity)) return;
 
     StopCurrentDialog();
-
-    _dialogSequenceAction = ActionScheduler.CreateSequence()
-      .Then(() => {
-        DisableInteraction();
-        SetDialog(FarewellDialog);
-        PlayPreDespawnEffects();
-      })
-      .Execute();
+    DisableInteraction();
+    SetDialog(FarewellDialog);
   }
 
   private void StopCurrentDialog() {
@@ -286,7 +283,6 @@ internal class Carrier(PlayerData ownerData) {
         _isFollowing = false;
         return;
       }
-
       UpdatePlayerPositionHistory();
       FollowPlayer();
     });
@@ -506,7 +502,16 @@ internal class Carrier(PlayerData ownerData) {
       .Then(PrepareToLeave)
       .ThenWait(2)
       .Then(EndPhase)
-      .ThenWait(3)
+      .ThenWait(1)
+      .Then(() => {
+        PlayPreDespawnEffects();
+      })
+      .ThenWait(0.2f)
+      .Then(() => {
+        AbilityService.CastAbility(ServantEntity, DespawnAbility);
+        UnitSpawnerService.ImmediateSpawn(new(191587271), ServantEntity.Position(), lifeTime: 0.1f);
+      })
+      .ThenWaitFrames(15)
       .Then(() => {
         Destroy();
         onDismissComplete();
@@ -535,7 +540,8 @@ internal class Carrier(PlayerData ownerData) {
   }
 
   private void PlayPreDespawnEffects() {
-    BuffService.TryApplyBuff(ServantEntity, DespawnVisualBuff);
-    AbilityService.CastAbility(ServantEntity, DespawnAbility);
+    foreach (var buff in DespawnVisualBuffs) {
+      BuffService.TryApplyBuff(ServantEntity, buff);
+    }
   }
 }
