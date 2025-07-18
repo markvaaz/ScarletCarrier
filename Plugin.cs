@@ -7,6 +7,7 @@ using VampireCommandFramework;
 using ScarletCore.Events;
 using ScarletCarrier.Services;
 using ScarletCore.Systems;
+using Unity.Mathematics;
 
 namespace ScarletCarrier;
 
@@ -31,14 +32,10 @@ public class Plugin : BasePlugin {
 
     Database = new Database(MyPluginInfo.PLUGIN_GUID);
 
-    EventManager.OnInitialize += (_, _) => {
-      Log.LogInfo("Removing carrier entities...");
-      CarrierService.ClearAll();
-      Log.LogInfo("Carrier entities removed.");
-    };
+    EventManager.OnInitialize += OnInitialize;
 
     // For relead purpose
-    if (GameSystems.Initialized) CarrierService.ClearAll();
+    if (GameSystems.Initialized) OnInitialize(null, null);
 
     CommandRegistry.RegisterAll();
   }
@@ -47,5 +44,12 @@ public class Plugin : BasePlugin {
     _harmony?.UnpatchSelf();
     CommandRegistry.UnregisterAssembly();
     return true;
+  }
+
+  public static void OnInitialize(object _, object __) {
+    LogInstance.LogInfo("Removing carrier entities...");
+    CarrierService.ClearAll();
+    CleanupService.ClearEntitiesInRadius(new float2(0, 0), 15);
+    LogInstance.LogInfo("Carrier entities removed.");
   }
 }
