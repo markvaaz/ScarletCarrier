@@ -1,6 +1,6 @@
 {
   "name": "ScarletCarrier",
-  "version_number": "0.8.1",
+  "version_number": "0.8.3",
   "website_url": "https://github.com/markvaaz/ScarletCarrier",
   "description": "Summon a servant that follows you and carries your items!",
   "dependencies": [
