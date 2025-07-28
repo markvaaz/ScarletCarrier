@@ -6,6 +6,11 @@
 - All calls to BuffService.TryApplyBuff now explicitly set the buff duration
 - This update is needed for the latest ScarletCore version (to be released)
 
+### Fixed
+- Improved inventory patch: now detects instanced items correctly instead of relying on component checks
+- This makes equipment and special items detection more reliable and robust
+- Some items like potions are now allowed to be stored in the carrier
+
 ## [0.8.1] - 2025-07-08
 
 ### Added
