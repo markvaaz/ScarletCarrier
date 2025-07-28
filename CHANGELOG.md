@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.8.3] - 2025-07-28
+
+### Changed
+- All calls to BuffService.TryApplyBuff now explicitly set the buff duration
+- This change does not affect gameplay, but improves code clarity and future compatibility
+
 ## [0.8.1] - 2025-07-08
 
 ### Added
