@@ -4,6 +4,10 @@
 
 **ScarletCarrier** is a V Rising mod that adds a servant carrier system to help transport your items. The mod provides a convenient way to summon a personal servant that can carry items, with automatic inventory persistence between summons.
 
+## Upcoming Features
+
+* Storage for weapons, armor, and other instanced items (soon 🤞)
+
 ---
 
 ## Support & Donations
@@ -28,10 +32,6 @@ When you summon a carrier, your personal servant appears and can store items in 
 * Customizable carrier appearance with multiple options
 * **Carrier following system** - Your carrier can follow you around or stay in place
 * **Emote controls** - Use emotes for quick carrier management (can be toggled off)
-
-## Upcoming Features
-
-* Storage for instanced items
 
 ## Commands
 
