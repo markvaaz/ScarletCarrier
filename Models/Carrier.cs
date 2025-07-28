@@ -142,7 +142,7 @@ internal class Carrier(PlayerData ownerData) {
 
   private void ApplyServantBuffs() {
     foreach (var permaBuffGuid in ServantPermaBuffs) {
-      BuffService.TryApplyBuff(ServantEntity, permaBuffGuid);
+      BuffService.TryApplyBuff(ServantEntity, permaBuffGuid, -1);
     }
 
     foreach (var tempBuff in ServantTempBuffs) {
@@ -539,7 +539,7 @@ internal class Carrier(PlayerData ownerData) {
 
   private void PlayPreDespawnEffects() {
     foreach (var buff in DespawnVisualBuffs) {
-      BuffService.TryApplyBuff(ServantEntity, buff);
+      BuffService.TryApplyBuff(ServantEntity, buff, -1);
     }
   }
 }
