@@ -4,7 +4,7 @@
 
 ### Changed
 - All calls to BuffService.TryApplyBuff now explicitly set the buff duration
-- This change does not affect gameplay, but improves code clarity and future compatibility
+- This update is needed for the latest ScarletCore version (to be released)
 
 ## [0.8.1] - 2025-07-08
 
