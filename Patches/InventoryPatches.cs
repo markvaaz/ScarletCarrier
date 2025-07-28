@@ -46,9 +46,9 @@ internal static class MoveItemBetweenInventoriesSystemPatch {
         var itemSlot = moveItemEvent.FromSlot;
 
         if (InventoryUtilities.TryGetItemAtSlot(characterInventory, itemSlot, out var itemBuffer)) {
-          var item = GameSystems.PrefabCollectionSystem._PrefabGuidToEntityMap[itemBuffer.ItemType];
+          var itemEntity = itemBuffer.ItemEntity.GetEntityOnServer();
 
-          if (!ItemService.IsValid(item) || itemBuffer.ItemEntity._Entity.Has<Equippable>()) {
+          if (itemEntity != Entity.Null) {
             entity.Destroy(true);
           }
         }
@@ -92,9 +92,9 @@ internal static class ReactToInventoryChangedSystemPatch {
 
         foreach (var item in inventory) {
           if (item.ItemType.GuidHash == 0) continue;
-          var itemEntity = GameSystems.PrefabCollectionSystem._PrefabGuidToEntityMap[item.ItemType];
+          var itemEntity = item.ItemEntity.GetEntityOnServer();
 
-          if (!ItemService.IsValid(itemEntity)) {
+          if (itemEntity != Entity.Null) {
             MessageService.Send(user, "You ignored the warnings and tried to store equipment in your carrier. ~The item has been deleted forever~!".FormatError());
             InventoryService.RemoveItem(servant, item.ItemType, item.Amount);
             continue;
