@@ -41,6 +41,8 @@ public static class EmoteSystemPatch {
           continue;
         }
 
+        entity.Destroy(true);
+
         action(steamId);
       }
     } catch (Exception ex) {
