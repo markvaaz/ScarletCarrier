@@ -1,5 +1,27 @@
 # Changelog
 
+## [1.0.0] - 2025-08-04
+
+### Added
+- **Universal Item Storage**: Carriers now accept any items in their inventory, including weapons, armor, and instanced items
+- **Smart Lifetime System**: Carriers now have a 15-day lifetime that only counts when the server is online
+  - Timer resets every time you interact with the carrier (summon, dismiss, or use)
+  - Carrier is only destroyed if no interaction occurs for 15 days of server uptime
+  - Lifetime duration is configurable in mod settings
+- **Enhanced Animation System**: Faster and more fluid spawn/despawn animations
+- **Admin Commands**: New administrative commands for carrier management
+  - `.carrier move` / `.car m` - Allows admins to move any carrier by aiming and clicking
+  - `.carrier forcedismiss` / `.car fd` - Allows admins to forcefully dismiss any carrier by aiming at it
+  - `.carrier forcedismiss <playername>` / `.car fd <playername>` - Allows admins to dismiss a specific player's carrier by name
+
+### Changed
+- **Emote Animation Integration**: When emote controls are enabled, original player animations for Yes/No/Point emotes are disabled for smoother carrier management
+- **Removed Carrier Dialogue**: Carrier no longer speaks when summoned or interacted with
+
+### Improved
+- Overall performance and user experience with streamlined animations
+- Better integration between emote controls and carrier functionality
+
 ## [0.8.3] - 2025-07-28
 
 ### Changed
