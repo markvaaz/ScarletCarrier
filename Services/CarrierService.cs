@@ -179,7 +179,6 @@ internal static class CarrierService {
     }).ToEntityArray(Allocator.Temp);
 
     foreach (var coffin in query) {
-      Log.Info($"Clearing legacy coffin {coffin} from world.");
       ClearLegacyCoffinFromWorld(coffin);
     }
   }
@@ -205,6 +204,8 @@ internal static class CarrierService {
     foreach (var buff in coffinBuffBuffer) {
       BuffService.TryRemoveBuff(coffin, buff.PrefabGuid);
     }
+
+    Log.Info($"Clearing legacy coffin {coffin} from world.");
 
     coffin.Destroy();
   }
