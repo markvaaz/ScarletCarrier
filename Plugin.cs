@@ -8,6 +8,7 @@ using ScarletCore.Events;
 using ScarletCarrier.Services;
 using ScarletCore.Systems;
 using Unity.Mathematics;
+using System.Reflection;
 
 namespace ScarletCarrier;
 
@@ -19,6 +20,7 @@ public class Plugin : BasePlugin {
   public static Harmony Harmony => _harmony;
   public static Plugin Instance { get; private set; }
   public static ManualLogSource LogInstance { get; private set; }
+  public static Settings Settings { get; private set; }
   public static Database Database { get; private set; }
 
   public override void Load() {
@@ -31,25 +33,40 @@ public class Plugin : BasePlugin {
     _harmony.PatchAll(System.Reflection.Assembly.GetExecutingAssembly());
 
     Database = new Database(MyPluginInfo.PLUGIN_GUID);
+    Settings = new Settings(MyPluginInfo.PLUGIN_GUID, Instance);
 
-    EventManager.OnInitialize += OnInitialize;
-
-    // For relead purpose
     if (GameSystems.Initialized) OnInitialize(null, null);
+    else EventManager.OnInitialize += OnInitialize;
 
+    EventManager.OnUserDisconnected += (_, userEvent) => {
+      var player = userEvent.Player;
+
+      if (CarrierService.HasServant(player.PlatformId)) {
+        CarrierService.Dismiss(player.PlatformId);
+      }
+    };
+
+    LoadSettings();
     CommandRegistry.RegisterAll();
   }
 
   public override bool Unload() {
     _harmony?.UnpatchSelf();
+    EventManager.UnregisterAssembly(Assembly.GetExecutingAssembly());
+    ActionScheduler.UnregisterAssembly(Assembly.GetExecutingAssembly());
     CommandRegistry.UnregisterAssembly();
     return true;
   }
 
   public static void OnInitialize(object _, object __) {
     LogInstance.LogInfo("Removing carrier entities...");
-    CarrierService.ClearAll();
+    CarrierService.Initialize();
     CleanupService.ClearEntitiesInRadius(new float2(0, 0), 15);
     LogInstance.LogInfo("Carrier entities removed.");
+  }
+
+  public static void LoadSettings() {
+    Settings.Section("General")
+      .Add("ExpireDays", 15, "Carrier lifetime in days before automatic cleanup (server uptime only).\nTimer resets each time a player interacts with their carrier.\nWarning: All items stored in expired carriers will be permanently lost.");
   }
 }
