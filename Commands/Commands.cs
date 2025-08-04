@@ -119,7 +119,7 @@ public static class CarrierCommands {
 
     if (appearanceData.TryGetValue(playerData.PlatformId, out var currentAppearance)) {
       if (currentAppearance == prefabs[number].GuidHash.ToString()) {
-        ctx.Reply($"Your carrier is already using the ~{prefabs[number]}~ appearance.".FormatError());
+        ctx.Reply($"Your carrier is already using the ~{names[number]}~ appearance.".FormatError());
         return;
       }
     }
