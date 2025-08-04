@@ -11,11 +11,12 @@ using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
 using Unity.Transforms;
+using System;
 
 namespace ScarletCarrier.Services;
 
 internal static class CarrierService {
-  private static readonly Dictionary<ulong, Carrier> _activeCarriers = [];
+  private static readonly Dictionary<ulong, Carrier> Carriers = [];
   public static readonly PrefabGUID[] AppearancePrefabs = [
     new(-450600397),  // Bomber
     new(2142021685),  // Alchemist
@@ -66,102 +67,124 @@ internal static class CarrierService {
     "~*~~Ace Incinerator~".Format(["green", RichTextFormatter.HighlightColor]),
   ];
 
-  private static readonly PrefabGUID SpawnAbility = new(2072201164);
   public const string CustomAppearances = "CustomAppearances";
+
+  public static void Initialize() {
+    ClearAllLegacy();
+
+    var query = GameSystems.EntityManager.CreateEntityQuery(new EntityQueryDesc {
+      All = new[] { ComponentType.ReadOnly<ServantCoffinstation>() },
+      Options = EntityQueryOptions.IncludeDisabledEntities
+    }).ToEntityArray(Allocator.Temp);
+
+    foreach (var entity in query) {
+      if (entity.IsNull() || !entity.Exists()) continue;
+      if (!entity.Has<ServantCoffinstation>() || !entity.Has<NameableInteractable>() || !entity.Has<EntityOwner>()) continue;
+      var owner = entity.Read<EntityOwner>().Owner;
+      var player = owner.GetPlayerData();
+
+      if (player == null) continue;
+
+      var servant = entity.Read<ServantCoffinstation>().ConnectedServant._Entity;
+      var carrier = new Carrier(entity, servant, player);
+
+      Carriers[player.PlatformId] = carrier;
+
+
+      carrier.Hide();
+    }
+  }
 
   public static void Spawn(ulong platformId) {
     var playerData = platformId.GetPlayerData();
+    Carrier carrier;
 
-    if (_activeCarriers.TryGetValue(playerData.PlatformId, out var existingCarrier)) {
-      if (existingCarrier.IsDismissInProgress) {
-        SendSCT(playerData);
-        return;
-      }
-      TeleportToPlayer(platformId);
+    if (!Carriers.ContainsKey(playerData.PlatformId)) {
+      carrier = new(playerData);
+      carrier.Create();
+    } else carrier = Carriers[playerData.PlatformId];
+
+    if (carrier == null) {
+      Log.Error($"Failed to create carrier for player {playerData.Name} ({playerData.PlatformId}).");
       return;
     }
 
-    AbilityService.CastAbility(playerData.CharacterEntity, SpawnAbility);
+    // Just in case the lifetime has expired or the entities are missing (extremely unlikely)
+    if (!carrier.ServantEntity.Exists() || !carrier.CoffinEntity.Exists()) {
+      Carriers.Remove(playerData.PlatformId);
+      carrier = new(playerData);
+      carrier.Create();
+      return;
+    }
 
-    var carrier = new Carrier(playerData);
+    carrier.Call();
 
-    carrier.Create();
-    carrier.CreateSpawnSequence();
-
-    _activeCarriers[playerData.PlatformId] = carrier;
+    Carriers[playerData.PlatformId] = carrier;
   }
 
   public static void Dismiss(ulong platformId) {
     var playerData = platformId.GetPlayerData();
 
-    if (!_activeCarriers.TryGetValue(playerData.PlatformId, out var carrier)) {
-      SendSCT(playerData);
+    if (!Carriers.TryGetValue(playerData.PlatformId, out var carrier)) {
       return;
     }
 
-    if (carrier.IsDismissInProgress) {
-      SendSCT(playerData);
+    // Just in case the lifetime has expired or the entities are missing (extremely unlikely)
+    if (!carrier.ServantEntity.Exists() || !carrier.CoffinEntity.Exists()) {
+      Carriers.Remove(playerData.PlatformId);
+      carrier = new(playerData);
+      carrier.Create();
       return;
     }
 
-    carrier.CreateDismissSequence(() => _activeCarriers.Remove(playerData.PlatformId));
+    carrier.Dismiss();
+  }
+  public static Carrier GetCarrier(ulong platformId) {
+    if (Carriers.TryGetValue(platformId, out var carrier) && carrier.IsValid()) {
+      return carrier;
+    }
+    return null;
   }
 
   public static bool HasServant(ulong platformId) {
-    return _activeCarriers.TryGetValue(platformId, out var carrier) && carrier.IsValid();
-  }
-
-  public static Entity GetServant(ulong platformId) {
-    if (_activeCarriers.TryGetValue(platformId, out var carrier) && carrier.IsValid()) {
-      return carrier.ServantEntity;
-    }
-    return Entity.Null;
+    return Carriers.TryGetValue(platformId, out var carrier) && carrier.IsValid();
   }
 
   public static bool IsFollowing(ulong platformId) {
-    return _activeCarriers.TryGetValue(platformId, out var carrier) && carrier.IsFollowing;
+    return Carriers.TryGetValue(platformId, out var carrier) && carrier.IsFollowing;
   }
 
   public static void ToggleFollow(ulong platformId) {
-    if (_activeCarriers.TryGetValue(platformId, out var carrier)) {
+    if (Carriers.TryGetValue(platformId, out var carrier)) {
       carrier.ToggleFollow();
     }
   }
 
   public static void StartFollow(ulong platformId) {
-    if (_activeCarriers.TryGetValue(platformId, out var carrier)) {
+    if (Carriers.TryGetValue(platformId, out var carrier)) {
       carrier.StartFollow();
     }
   }
 
   public static void StopFollow(ulong platformId) {
-    if (_activeCarriers.TryGetValue(platformId, out var carrier)) {
+    if (Carriers.TryGetValue(platformId, out var carrier)) {
       carrier.StopFollow();
     }
   }
 
-  public static void TeleportToPlayer(ulong platformId) {
-    if (_activeCarriers.TryGetValue(platformId, out var carrier)) {
-      carrier.TeleportToPlayer();
+  public static void ClearAllLegacy() {
+    var query = GameSystems.EntityManager.CreateEntityQuery(new EntityQueryDesc {
+      All = new[] { ComponentType.ReadOnly<ServantCoffinstation>() },
+      Options = EntityQueryOptions.IncludeDisabledEntities
+    }).ToEntityArray(Allocator.Temp);
+
+    foreach (var coffin in query) {
+      Log.Info($"Clearing legacy coffin {coffin} from world.");
+      ClearLegacyCoffinFromWorld(coffin);
     }
   }
 
-  public static void ClearAll() {
-    foreach (var carrier in _activeCarriers.Values) {
-      carrier.Destroy();
-    }
-    _activeCarriers.Clear();
-
-    var coffins = GameSystems.EntityManager.CreateEntityQuery(ComponentType.ReadOnly<ServantCoffinstation>()).ToEntityArray(Allocator.Temp);
-
-    foreach (var coffin in coffins) {
-      ClearCoffinFromWorld(coffin);
-    }
-
-    coffins.Dispose();
-  }
-
-  private static void ClearCoffinFromWorld(Entity coffin) {
+  private static void ClearLegacyCoffinFromWorld(Entity coffin) {
     if (Entity.Null.Equals(coffin) || !coffin.Has<ServantCoffinstation>()) return;
 
     if (!coffin.Has<NameableInteractable>() || !coffin.Has<LocalTransform>()) return;
@@ -169,12 +192,12 @@ internal static class CarrierService {
     var position = coffin.Read<LocalTransform>().Position;
     var id = coffin.Read<NameableInteractable>().Name.Value;
 
-    if (position.y != Carrier.Height && id != Carrier.Id) return;
+    if (position.y != Carrier.Height && id != Carrier.LegacyId) return;
 
     var servant = coffin.Read<ServantCoffinstation>().ConnectedServant._Entity;
 
     if (!Entity.Null.Equals(servant) && servant.Has<Follower>()) {
-      ClearServantFromWorld(servant);
+      ClearLegacyServantFromWorld(servant);
     }
 
     var coffinBuffBuffer = coffin.ReadBuffer<BuffBuffer>();
@@ -186,7 +209,7 @@ internal static class CarrierService {
     coffin.Destroy();
   }
 
-  private static void ClearServantFromWorld(Entity servant) {
+  private static void ClearLegacyServantFromWorld(Entity servant) {
     if (Entity.Null.Equals(servant) || !servant.Has<Follower>()) return;
 
     servant.Remove<Follower>();
@@ -200,19 +223,5 @@ internal static class CarrierService {
     }
 
     servant.Destroy();
-  }
-
-  private static void SendSCT(PlayerData player) {
-    ScrollingCombatTextMessage.Create(
-      GameSystems.EntityManager,
-      GameSystems.EndSimulationEntityCommandBufferSystem.CreateCommandBuffer(),
-      AssetGuid.FromString("45e3238f-36c1-427c-b21c-7d50cfbd77bc"),
-      player.CharacterEntity.Position(),
-      new float3(1f, 0f, 0f),
-      player.CharacterEntity,
-      0,
-      new PrefabGUID(-1404311249),
-      player.UserEntity
-    );
   }
 }
