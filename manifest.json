@@ -2,7 +2,7 @@
   "name": "ScarletCarrier",
   "version_number": "1.0.0",
   "website_url": "https://github.com/markvaaz/ScarletCarrier",
-  "description": "Summon a servant that follows you and carries your items!",
+  "description": "Major Update! Summon a servant that follows you and carries your items!",
   "dependencies": [
     "BepInEx-BepInExPack_V_Rising-1.733.2",
     "ScarletMods-ScarletCore-1.1.7"
