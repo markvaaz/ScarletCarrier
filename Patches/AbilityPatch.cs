@@ -3,7 +3,6 @@ using ProjectM;
 using ProjectM.Network;
 using ScarletCarrier.Services;
 using ScarletCore;
-using ScarletCore.Utils;
 using Stunlock.Core;
 using Unity.Collections;
 
