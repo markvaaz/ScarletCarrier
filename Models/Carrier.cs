@@ -98,7 +98,6 @@ internal class Carrier {
     });
 
     ServantEntity.With((ref Age age) => {
-      Log.Info(age.Value);
       age.Value = 0f;
     });
 
