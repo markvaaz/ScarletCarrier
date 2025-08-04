@@ -11,146 +11,216 @@ using Stunlock.Core;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Animation;
+using Unity.Entities.UniversalDelegates;
 
 namespace ScarletCarrier.Models;
 
-internal class Carrier(PlayerData ownerData) {
-  private static Database Database => Plugin.Database;
-
-  // Constants
+internal class Carrier {
   private const float MaxSpawnDistance = 3f;
   private const float MaxTeleportDistance = 15f;
-  private const float DialogInterval = 2f;
   public const float Height = 221f;
   private const int MaxPositionHistory = 8;
   private const float ServantSpeedMultiplier = 0.95f;
-  public const string Id = "__ScarletCarrier__";
+  public const string Id = "__ScarletCarrier1.0__";
+  public const string LegacyId = "__ScarletCarrier__";
 
-  // Prefabs and data
   private static readonly PrefabGUID CoffinPrefab = new(723455393);
   private static readonly PrefabGUID DefaultServantPrefab = new(2142021685);
-  private static readonly PrefabGUID SpawnAbility = new(2072201164);
-  private static readonly PrefabGUID DespawnAbility = new(-1446310610);
   private static readonly PrefabGUID NeutralFaction = new(-1430861195);
-  private static readonly PrefabGUID MountedBuff = new(-978792376);
-  private static readonly PrefabGUID[] DespawnVisualBuffs = [
-    new(2127839743),
-    new(1880224358)
-  ];
+  private static readonly PrefabGUID PlayerMountedBuff = new(-978792376);
+  private static readonly PrefabGUID SpawnPlayerBuff = new(-1879665573);
+
   private static readonly PrefabGUID[] ServantPermaBuffs = [
     new(-480024072), // Invulnerable Buff
     new(1934061152), // Disable aggro
     new(1360141727)  // Immaterial
   ];
 
-  private static readonly Dictionary<PrefabGUID, float> ServantTempBuffs = new() {
-    { new PrefabGUID(-1855386239), 0.2f }, // Blood
-    { new PrefabGUID(-2061378836), 3f }    // Heart explosion
-  };
-
-  // Dialog constants
-  private static readonly string[] GreetingsDialogLines = [
-    "Hey there {playerName}!",
-    "I'm here to help carry your stuff.",
-    "Just hand me whatever you need to store.",
-    "Give me the word when you're ready for me to go!"
-  ];
-
-  private const string PreparingToLeaveDialog = "All right, I'm about to head out.";
-  private const string FarewellDialog = "See you later!";
-  private const string StartFollowDialog = "Right behind you!";
-  private const string StopFollowDialog = "I'll wait here for you.";
-  private const string CarrierNameFormat = "{playerName}'s Carrier";
-
+  private const string NameFormat = "{playerName}'s Carrier";
   public Entity CoffinEntity { get; private set; }
   public Entity ServantEntity { get; private set; }
-  public PlayerData OwnerData { get; private set; } = ownerData;
-  public ulong PlatformId => OwnerData.PlatformId;
-
+  public PlayerData Owner { get; private set; }
+  public float3 DismissPosition = new(-359, 15, -280);
+  public ulong PlatformId => Owner.PlatformId;
   private List<float3> _positionHistory = [];
   private ActionId _followAction;
   private float3 _currentTargetPosition;
   private bool _isFollowing;
-
-  private List<ActionId> _activeActions = [];
-  private ActionId _spawnSequenceAction;
-  private ActionId _dialogSequenceAction;
-  private bool _dismissInProgress;
-
   public bool IsFollowing => _isFollowing;
-  public bool IsDismissInProgress => _dismissInProgress;
+  public bool Busy { get; private set; } = false;
+  public float BusyDuration = 1.5f;
+  public static int MaxDays => Plugin.Settings.Get<int>("ExpireDays") * 24 * 60 * 60;
+
+  public Carrier(PlayerData ownerData) {
+    Owner = ownerData;
+  }
+
+  public Carrier(Entity coffin, Entity servant, PlayerData ownerData) {
+    CoffinEntity = coffin;
+    ServantEntity = servant;
+    Owner = ownerData;
+    BindCoffinServant();
+  }
+
+  public void Call() {
+    if (Busy) return;
+    SetAsBusy();
+    ActionScheduler.Delayed(() => Busy = false, BusyDuration);
+    SetName(Owner.Name);
+
+    if (BuffService.HasBuff(ServantEntity, CarrierState.Hidden)) {
+      BuffService.TryRemoveBuff(ServantEntity, CarrierState.Hidden);
+    }
+
+    if (!BuffService.HasBuff(Owner.CharacterEntity, SpawnPlayerBuff)) {
+      BuffService.TryApplyBuff(Owner.CharacterEntity, SpawnPlayerBuff);
+    }
+
+    if (!BuffService.HasBuff(ServantEntity, CarrierState.Spawning)) {
+      BuffService.TryApplyBuff(ServantEntity, CarrierState.Spawning, BusyDuration);
+    }
+
+    ResetLifeTime();
+    PositionServantOnPlayerAim();
+    LookAtPlayer();
+    LoadServantInventoryFromLegacy();
+  }
+
+  public void ResetLifeTime() {
+    ServantEntity.AddWith((ref LifeTime lifetime) => {
+      lifetime.Duration = MaxDays;
+      lifetime.EndAction = LifeTimeEndAction.Destroy;
+    });
+
+    CoffinEntity.AddWith((ref LifeTime lifetime) => {
+      lifetime.Duration = MaxDays;
+      lifetime.EndAction = LifeTimeEndAction.Destroy;
+    });
+
+    ServantEntity.With((ref Age age) => {
+      Log.Info(age.Value);
+      age.Value = 0f;
+    });
+
+    CoffinEntity.With((ref Age age) => {
+      age.Value = 0f;
+    });
+  }
+
+  public void Dismiss() {
+    if (Busy) return;
+
+    SetAsBusy();
+    StopFollow();
+    if (!BuffService.HasBuff(ServantEntity, CarrierState.Leaving)) {
+      BuffService.TryApplyBuff(ServantEntity, CarrierState.Leaving, BusyDuration);
+    }
+    if (!BuffService.HasBuff(ServantEntity, CarrierState.Hidden)) {
+      BuffService.TryApplyBuff(ServantEntity, CarrierState.Hidden, -1);
+    }
+    ActionScheduler.DelayedFrames(Hide, 3);
+  }
+
+  private void SetAsBusy() {
+    Busy = true;
+    ActionScheduler.Delayed(() => {
+      Busy = false;
+    }, BusyDuration);
+  }
+
+  public bool IsValid() {
+    return !Entity.Null.Equals(CoffinEntity) && !Entity.Null.Equals(ServantEntity) && CoffinEntity.Exists() && ServantEntity.Exists();
+  }
+
+  private void SetName(string playerName) {
+    CoffinEntity.With((ref ServantCoffinstation coffinStation) => {
+      coffinStation.ServantName = new FixedString64Bytes(NameFormat.Replace("{playerName}", playerName));
+    });
+  }
 
   public void Create() {
-    var position = OwnerData.Position;
+    CreateCoffin();
+    CreateServant();
+    BindCoffinServant();
+    RemoveDisableComponents(CoffinEntity);
+    RemoveDisableComponents(ServantEntity);
+  }
 
-    CoffinEntity = UnitSpawnerService.ImmediateSpawn(CoffinPrefab, position, owner: OwnerData.CharacterEntity, lifeTime: -1);
-
+  private void CreateCoffin() {
+    CoffinEntity = UnitSpawnerService.ImmediateSpawn(CoffinPrefab, Owner.Position + new float3(0, Height, 0), owner: Owner.CharacterEntity, lifeTime: MaxDays);
     CoffinEntity.AddWith((ref NameableInteractable nameable) => {
       nameable.Name = new FixedString64Bytes(Id);
     });
-
-    CreateServant();
-    TeleportService.TeleportToPosition(CoffinEntity, new float3(position.x, Height, position.z));
-    CoffinEntity.SetTeam(OwnerData.CharacterEntity);
-    ConfigureCoffinServantConnection();
-    RemoveDisableComponents(CoffinEntity);
+    CoffinEntity.AddWith((ref EntityOwner owner) => {
+      owner.Owner = Owner.CharacterEntity;
+    });
+    CoffinEntity.SetTeam(Owner.CharacterEntity);
   }
 
   private void CreateServant() {
-    var customAppearancesList = Database.Get<Dictionary<ulong, string>>(CarrierService.CustomAppearances) ?? [];
-    var customServantPrefab = DefaultServantPrefab;
+    var customServantPrefab = GetServantAppearance();
 
+    ServantEntity = UnitSpawnerService.ImmediateSpawn(customServantPrefab, Owner.Position, owner: Owner.CharacterEntity, lifeTime: MaxDays);
+    ConfigureServant();
+  }
+
+  private PrefabGUID GetServantAppearance() {
+    var customAppearancesList = Plugin.Database.Get<Dictionary<ulong, string>>(CarrierService.CustomAppearances) ?? [];
+    var customServantPrefab = DefaultServantPrefab;
     if (customAppearancesList.TryGetValue(PlatformId, out var guidHash) && PrefabGUID.TryParse(guidHash, out var customServant)) {
       customServantPrefab = customServant;
     }
+    return customServantPrefab;
+  }
 
-    ServantEntity = UnitSpawnerService.ImmediateSpawn(customServantPrefab, OwnerData.Position, owner: OwnerData.CharacterEntity, lifeTime: -1f);
+  public void SwapServantAppearance() {
+    if (ServantEntity.IsNull() || !ServantEntity.Exists()) {
+      Log.Error("Current servant entity is invalid.");
+      return;
+    }
 
+    StopFollow();
+
+    var customServantPrefab = GetServantAppearance();
+    var oldServantPosition = ServantEntity.Position();
+    var newServant = UnitSpawnerService.ImmediateSpawn(customServantPrefab, oldServantPosition, 0f, 0f, owner: Owner.CharacterEntity, lifeTime: MaxDays);
+
+    var inventoryItems = InventoryService.GetInventoryItems(ServantEntity);
+    var oldServantEquipment = ServantEntity.Read<ServantEquipment>();
+    var newServantEquipment = newServant.Read<ServantEquipment>();
+
+    ActionScheduler.CreateSequence()
+      .ThenWaitFrames(5)
+      .Then(() => {
+        for (int i = 0; i < inventoryItems.Length; i++) {
+          InventoryService.TransferItem(ServantEntity, newServant, i);
+        }
+
+        newServant.Write(oldServantEquipment);
+        ServantEntity.Write(new ServantEquipment());
+
+        ServantEntity.Destroy();
+        ServantEntity = newServant;
+
+        TeleportService.TeleportToPosition(CoffinEntity, oldServantPosition + new float3(0, Height, 0));
+        if (!BuffService.HasBuff(ServantEntity, CarrierState.Spawning)) {
+          BuffService.TryApplyBuff(ServantEntity, CarrierState.Spawning, 2f);
+        }
+        LookAtPlayer();
+        ConfigureServant();
+        BindCoffinServant();
+      }).Execute();
+  }
+
+  private void ConfigureServant() {
     ServantEntity.AddWith((ref NameableInteractable nameable) => {
       nameable.Name = new FixedString64Bytes(Id);
     });
 
-    ApplyServantBuffs();
-    ConfigureServantBehavior();
-    PositionServant();
-    LookAtPlayer();
-  }
-
-  private void ConfigureCoffinServantConnection() {
-    ServantEntity.AddWith((ref ServantConnectedCoffin servantConnectedCoffin) => {
-      servantConnectedCoffin.CoffinEntity = NetworkedEntity.ServerEntity(CoffinEntity);
-    });
-
-    CoffinEntity.AddWith((ref ServantCoffinstation coffinStation) => {
-      coffinStation.ConnectedServant = NetworkedEntity.ServerEntity(ServantEntity);
-      coffinStation.State = ServantCoffinState.ServantAlive;
-    });
-
-    SetCarrierName(OwnerData.Name);
-  }
-
-  private void RemoveDisableComponents(Entity entity) {
-    if (entity.Has<DisableWhenNoPlayersInRange>()) {
-      entity.Remove<DisableWhenNoPlayersInRange>();
-    }
-
-    if (entity.Has<DisableWhenNoPlayersInRangeOfChunk>()) {
-      entity.Remove<DisableWhenNoPlayersInRangeOfChunk>();
-    }
-  }
-
-  private void ApplyServantBuffs() {
     foreach (var permaBuffGuid in ServantPermaBuffs) {
       BuffService.TryApplyBuff(ServantEntity, permaBuffGuid, -1);
     }
 
-    foreach (var tempBuff in ServantTempBuffs) {
-      BuffService.TryApplyBuff(ServantEntity, tempBuff.Key, tempBuff.Value);
-    }
-  }
-
-  private void ConfigureServantBehavior() {
     ServantEntity.With((ref AggroConsumer aggroConsumer) => {
       aggroConsumer.Active = new ModifiableBool(false);
     });
@@ -166,16 +236,38 @@ internal class Carrier(PlayerData ownerData) {
     });
 
     ServantEntity.With((ref Follower follower) => {
-      follower.Followed = new ModifiableEntity(OwnerData.UserEntity);
+      follower.Followed = new ModifiableEntity(Owner.UserEntity);
     });
 
-    RemoveDisableComponents(ServantEntity);
-    ServantEntity.SetTeam(OwnerData.CharacterEntity);
+    ServantEntity.SetTeam(Owner.CharacterEntity);
   }
 
-  private void PositionServant() {
-    var characterPosition = OwnerData.Position;
-    var aimPosition = OwnerData.CharacterEntity.Read<EntityAimData>().AimPosition;
+  private void BindCoffinServant() {
+    ServantEntity.AddWith((ref ServantConnectedCoffin servantConnectedCoffin) => {
+      servantConnectedCoffin.CoffinEntity = NetworkedEntity.ServerEntity(CoffinEntity);
+    });
+
+    CoffinEntity.AddWith((ref ServantCoffinstation coffinStation) => {
+      coffinStation.ConnectedServant = NetworkedEntity.ServerEntity(ServantEntity);
+      coffinStation.State = ServantCoffinState.ServantAlive;
+    });
+
+    SetName(Owner.Name);
+  }
+
+  private void RemoveDisableComponents(Entity entity) {
+    if (entity.Has<DisableWhenNoPlayersInRange>()) {
+      entity.Remove<DisableWhenNoPlayersInRange>();
+    }
+
+    if (entity.Has<DisableWhenNoPlayersInRangeOfChunk>()) {
+      entity.Remove<DisableWhenNoPlayersInRangeOfChunk>();
+    }
+  }
+
+  private void PositionServantOnPlayerAim() {
+    var characterPosition = Owner.Position;
+    var aimPosition = Owner.CharacterEntity.Read<EntityAimData>().AimPosition;
 
     var distance = math.distance(characterPosition, aimPosition);
 
@@ -184,100 +276,30 @@ internal class Carrier(PlayerData ownerData) {
       : characterPosition + (MathUtility.GetDirection(characterPosition, aimPosition) * MaxSpawnDistance);
 
     finalPosition.y = characterPosition.y;
-
     TeleportService.TeleportToPosition(ServantEntity, finalPosition);
+    TeleportService.TeleportToPosition(CoffinEntity, finalPosition + new float3(0, Height, 0));
   }
 
-  private void LookAtPlayer() {
-    ServantEntity.With((ref EntityInput lookAtTarget) => {
-      lookAtTarget.SetAllAimPositions(OwnerData.CharacterEntity.Position());
-    });
-  }
+  private void LoadServantInventoryFromLegacy() {
+    if (!Plugin.Database.Has(PlatformId.ToString())) return;
 
-  public void StartPhase() {
-    if (Entity.Null.Equals(ServantEntity)) return;
-    LoadServantInventory();
-    AbilityService.CastAbility(ServantEntity, SpawnAbility);
-    var playerPosition = OwnerData.CharacterEntity.Position();
-    var servantPosition = ServantEntity.Position();
-    TeleportService.TeleportToPosition(ServantEntity, new(servantPosition.x, playerPosition.y, servantPosition.z));
-  }
-
-  private void LoadServantInventory() {
-    Dictionary<int, int> inventoryItems = Database.Get<Dictionary<int, int>>(PlatformId.ToString()) ?? [];
+    Dictionary<int, int> inventoryItems = Plugin.Database.Get<Dictionary<int, int>>(PlatformId.ToString()) ?? [];
 
     foreach (var item in inventoryItems) {
       InventoryService.AddItem(ServantEntity, new(item.Key), item.Value);
     }
-  }
 
-  public void RunDialogSequence() {
-    if (Entity.Null.Equals(CoffinEntity)) return;
-
-    StopCurrentDialog();
-
-    var index = 0;
-
-    _dialogSequenceAction = ActionScheduler.Repeating(() => {
-      if (index == GreetingsDialogLines.Length) {
-        SetCarrierName(OwnerData.Name);
-      } else {
-        SetDialog(GreetingsDialogLines[index].Replace("{playerName}", OwnerData.Name));
-      }
-
-      index++;
-    }, DialogInterval, GreetingsDialogLines.Length + 1);
-  }
-
-  public void PrepareToLeave() {
-    if (Entity.Null.Equals(CoffinEntity)) return;
-
-    StopCurrentDialog();
-
-    _dialogSequenceAction = ActionScheduler.CreateSequence()
-      .Then(() => SetDialog(PreparingToLeaveDialog))
-      .Execute();
-  }
-
-  public void EndPhase() {
-    if (Entity.Null.Equals(CoffinEntity) || Entity.Null.Equals(ServantEntity)) return;
-
-    StopCurrentDialog();
-    DisableInteraction();
-    SetDialog(FarewellDialog);
-  }
-
-  private void StopCurrentDialog() {
-    if (_dialogSequenceAction != default) {
-      ActionScheduler.CancelAction(_dialogSequenceAction);
-      _dialogSequenceAction = default;
-    }
-  }
-
-  public void StopDialog() {
-    StopCurrentDialog();
-  }
-
-  public void ShowCustomDialogWithNameRestore(string message, float dialogDuration = 1.5f) {
-    if (Entity.Null.Equals(CoffinEntity)) return;
-
-    StopCurrentDialog();
-
-    _dialogSequenceAction = ActionScheduler.CreateSequence()
-      .Then(() => SetDialog(message))
-      .ThenWait(dialogDuration)
-      .Then(() => SetCarrierName(OwnerData.Name))
-      .Execute();
+    Plugin.Database.Delete(PlatformId.ToString());
   }
 
   public void StartFollow() {
-    if (_isFollowing || _dismissInProgress) return;
+    if (_isFollowing) return;
 
     _positionHistory.Clear();
     _isFollowing = true;
 
     _followAction = ActionScheduler.OncePerFrame(end => {
-      if (ServantEntity.IsNull() || !ServantEntity.Exists()) {
+      if (ServantEntity.IsNull() || !ServantEntity.Exists() || BuffService.HasBuff(ServantEntity, CarrierState.Hidden)) {
         end();
         _isFollowing = false;
         return;
@@ -285,8 +307,6 @@ internal class Carrier(PlayerData ownerData) {
       UpdatePlayerPositionHistory();
       FollowPlayer();
     });
-
-    ShowCustomDialogWithNameRestore(StartFollowDialog);
   }
 
   public void StopFollow() {
@@ -300,13 +320,22 @@ internal class Carrier(PlayerData ownerData) {
 
     StopSeekingPosition();
     _positionHistory.Clear();
-
-    ShowCustomDialogWithNameRestore(StopFollowDialog);
   }
 
-  public void TeleportToPlayer() {
-    var playerPosition = OwnerData.CharacterEntity.Position();
-    TeleportService.TeleportToPosition(ServantEntity, playerPosition);
+  public void TeleportToPosition(float3 position) {
+    if (Entity.Null.Equals(ServantEntity) || !ServantEntity.Exists()) return;
+    TeleportService.TeleportToPosition(ServantEntity, position);
+  }
+
+  public void Hide() {
+    SetName(Owner.Name);
+    TeleportToPosition(DismissPosition);
+  }
+
+  private void LookAtPlayer() {
+    ServantEntity.With((ref EntityInput lookAtTarget) => {
+      lookAtTarget.SetAllAimPositions(Owner.Position);
+    });
   }
 
   public void ToggleFollow() {
@@ -318,9 +347,9 @@ internal class Carrier(PlayerData ownerData) {
   }
 
   private void FollowPlayer() {
-    var playerSpeed = OwnerData.CharacterEntity.Read<MoveVelocity>().MoveVelocityMagnitude;
+    var playerSpeed = Owner.CharacterEntity.Read<MoveVelocity>().MoveVelocityMagnitude;
     var servantPos = ServantEntity.Position();
-    var playerPos = OwnerData.CharacterEntity.Read<PlayerLastValidPosition>().LastValidPosition;
+    var playerPos = Owner.CharacterEntity.Read<PlayerLastValidPosition>().LastValidPosition;
     var distanceToPlayer = math.distance(servantPos, playerPos);
     var heightDifference = math.abs(servantPos.y - playerPos.y);
 
@@ -340,7 +369,7 @@ internal class Carrier(PlayerData ownerData) {
       playerSpeed = 2f;
     }
 
-    if (BuffService.HasBuff(OwnerData.CharacterEntity, MountedBuff)) {
+    if (BuffService.HasBuff(Owner.CharacterEntity, PlayerMountedBuff)) {
       playerSpeed *= 5f;
     }
 
@@ -374,7 +403,7 @@ internal class Carrier(PlayerData ownerData) {
       return servantPosition;
     }
 
-    var playerPosition = OwnerData.CharacterEntity.Read<PlayerLastValidPosition>().LastValidPosition;
+    var playerPosition = Owner.CharacterEntity.Read<PlayerLastValidPosition>().LastValidPosition;
 
     if (math.distance(servantPosition, playerPosition) <= MaxSpawnDistance) {
       _positionHistory.Clear();
@@ -393,7 +422,7 @@ internal class Carrier(PlayerData ownerData) {
   }
 
   private void UpdatePlayerPositionHistory() {
-    var currentPos = OwnerData.CharacterEntity.Read<PlayerLastValidPosition>().LastValidPosition;
+    var currentPos = Owner.CharacterEntity.Read<PlayerLastValidPosition>().LastValidPosition;
 
     if (_positionHistory.Count == 0 || math.distance(_positionHistory[^1], currentPos) > 0.5f) {
       _positionHistory.Add(currentPos);
@@ -403,143 +432,10 @@ internal class Carrier(PlayerData ownerData) {
       }
     }
   }
+}
 
-  public void ClearInventory() {
-    if (InventoryUtilities.TryGetInventoryEntity(GameSystems.EntityManager, ServantEntity, out var inventoryEntity)) {
-      var items = InventoryService.GetInventoryItems(ServantEntity);
-      var sgm = GameSystems.ServerGameManager;
-
-      foreach (var item in items) {
-        sgm.TryRemoveInventoryItem(inventoryEntity, item.ItemType, 999999999);
-      }
-    }
-  }
-
-  public void Destroy() {
-    CancelAllActions();
-    RemoveCoffin();
-    RemoveServant();
-  }
-
-  private void RemoveCoffin() {
-    if (CoffinEntity.IsNull() || !CoffinEntity.Exists()) return;
-
-    var coffinBuffBuffer = CoffinEntity.ReadBuffer<BuffBuffer>();
-
-    foreach (var buff in coffinBuffBuffer) {
-      BuffService.TryRemoveBuff(CoffinEntity, buff.PrefabGuid);
-    }
-
-    CoffinEntity.Destroy();
-    CoffinEntity = Entity.Null;
-  }
-
-  private void RemoveServant() {
-    if (ServantEntity.IsNull() || !ServantEntity.Exists()) return;
-
-    ServantEntity.Remove<Follower>();
-    ClearInventory();
-
-    var servantBuffBuffer = ServantEntity.ReadBuffer<BuffBuffer>();
-
-    foreach (var buff in servantBuffBuffer) {
-      BuffService.TryRemoveBuff(ServantEntity, buff.PrefabGuid);
-    }
-
-    ServantEntity.Destroy();
-    ServantEntity = Entity.Null;
-  }
-
-  public bool IsValid() {
-    return !Entity.Null.Equals(CoffinEntity) && !Entity.Null.Equals(ServantEntity) && CoffinEntity.Exists() && ServantEntity.Exists();
-  }
-
-  // Action management methods
-  public void AddAction(ActionId action) {
-    _activeActions.Add(action);
-  }
-
-  public void CancelAllActions() {
-    foreach (var action in _activeActions) {
-      ActionScheduler.CancelAction(action);
-    }
-    _activeActions.Clear();
-
-    if (_spawnSequenceAction != default) {
-      ActionScheduler.CancelAction(_spawnSequenceAction);
-      _spawnSequenceAction = default;
-    }
-
-    if (_dialogSequenceAction != default) {
-      ActionScheduler.CancelAction(_dialogSequenceAction);
-      _dialogSequenceAction = default;
-    }
-
-    if (_followAction != default) {
-      ActionScheduler.CancelAction(_followAction);
-      _followAction = default;
-    }
-  }
-
-  public ActionId CreateSpawnSequence() {
-    _spawnSequenceAction = ActionScheduler.CreateSequence()
-      .ThenWaitFrames(10)
-      .Then(StartPhase)
-      .ThenWait(2f)
-      .Then(RunDialogSequence)
-      .Execute();
-
-    return _spawnSequenceAction;
-  }
-
-  public ActionId CreateDismissSequence(Action onDismissComplete = null) {
-    if (_dismissInProgress) return default;
-
-    _dismissInProgress = true;
-
-    var dismissAction = ActionScheduler.CreateSequence()
-      .Then(PrepareToLeave)
-      .ThenWait(2)
-      .Then(EndPhase)
-      .ThenWait(1)
-      .Then(() => {
-        PlayPreDespawnEffects();
-      })
-      .ThenWait(0.2f)
-      .Then(() => {
-        AbilityService.CastAbility(ServantEntity, DespawnAbility);
-      })
-      .ThenWaitFrames(15)
-      .Then(() => {
-        Destroy();
-        onDismissComplete();
-      })
-      .Execute();
-
-    AddAction(dismissAction);
-    return dismissAction;
-  }
-
-  // Private helper methods for dialog and interaction management
-  private void SetCarrierName(string playerName) {
-    SetDialog(CarrierNameFormat.Replace("{playerName}", playerName));
-  }
-
-  private void SetDialog(string message) {
-    CoffinEntity.With((ref ServantCoffinstation coffinStation) => {
-      coffinStation.ServantName = new FixedString64Bytes(message);
-    });
-  }
-
-  private void DisableInteraction() {
-    ServantEntity.With((ref Interactable interactable) => {
-      interactable.Disabled = true;
-    });
-  }
-
-  private void PlayPreDespawnEffects() {
-    foreach (var buff in DespawnVisualBuffs) {
-      BuffService.TryApplyBuff(ServantEntity, buff, -1);
-    }
-  }
+internal class CarrierState {
+  public static PrefabGUID Leaving = new(826269213);
+  public static PrefabGUID Hidden = new(-1144825660);
+  public static PrefabGUID Spawning = new(1497959076);
 }
