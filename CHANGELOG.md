@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.0.1] - 2025-08-06
+
+### Added
+- **Private Carrier System**: Carriers are now private to their owners - other players cannot interact with carriers that don't belong to them
+
 ## [1.0.0] - 2025-08-04
 
 ### Added

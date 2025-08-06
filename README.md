@@ -27,6 +27,7 @@ When you summon a carrier, your personal servant appears and can store **any ite
 ## Features
 
 * **Universal item storage** - Store any items in your carrier's inventory, including weapons, armor, and instanced items
+* **Private carrier system** - Your carrier is private to you; other players cannot access your carrier's inventory
 * **Smart lifetime system** - 15-day lifetime that only counts server uptime and resets with each interaction (configurable)
 * **Enhanced animations** - Faster and more fluid spawn/despawn animations for better gameplay flow
 * Summon a servant that can carry items
