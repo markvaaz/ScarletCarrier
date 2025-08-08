@@ -11,7 +11,6 @@ using Stunlock.Core;
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Mathematics;
-using Unity.Entities.UniversalDelegates;
 
 namespace ScarletCarrier.Models;
 
@@ -280,8 +279,7 @@ internal class Carrier {
       : characterPosition + (MathUtility.GetDirection(characterPosition, aimPosition) * MaxSpawnDistance);
 
     finalPosition.y = characterPosition.y;
-    TeleportService.TeleportToPosition(ServantEntity, finalPosition);
-    TeleportService.TeleportToPosition(CoffinEntity, finalPosition + new float3(0, Height, 0));
+    TeleportToPosition(finalPosition);
   }
 
   private void LoadServantInventoryFromLegacy() {
@@ -359,8 +357,7 @@ internal class Carrier {
     var heightDifference = math.abs(servantPos.y - playerPos.y);
 
     if (distanceToPlayer > MaxTeleportDistance || heightDifference > 4f) {
-      TeleportService.TeleportToPosition(ServantEntity, playerPos);
-      TeleportService.TeleportToPosition(CoffinEntity, playerPos + new float3(0, Height, 0));
+      TeleportToPosition(playerPos);
       return;
     }
 
