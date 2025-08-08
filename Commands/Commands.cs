@@ -8,6 +8,7 @@ using ProjectM;
 using ScarletCarrier.Models;
 using ScarletCore.Systems;
 using ScarletCore.Data;
+using Unity.Entities;
 
 namespace ScarletCarrier.Commands;
 
