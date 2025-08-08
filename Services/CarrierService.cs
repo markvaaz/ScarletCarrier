@@ -90,7 +90,6 @@ internal static class CarrierService {
 
       Carriers[player.PlatformId] = carrier;
 
-
       carrier.Hide();
     }
   }
@@ -191,8 +190,7 @@ internal static class CarrierService {
     var position = coffin.Read<LocalTransform>().Position;
     var id = coffin.Read<NameableInteractable>().Name.Value;
 
-    if (position.y != Carrier.Height && id != Carrier.LegacyId) return;
-
+    if (position.y != Carrier.LegacyHeight || id != Carrier.LegacyId) return;
     var servant = coffin.Read<ServantCoffinstation>().ConnectedServant._Entity;
 
     if (!Entity.Null.Equals(servant) && servant.Has<Follower>()) {
@@ -222,6 +220,8 @@ internal static class CarrierService {
     foreach (var buff in servantBuffBuffer) {
       BuffService.TryRemoveBuff(servant, buff.PrefabGuid);
     }
+
+    Log.Info($"Clearing legacy servant {servant} from world.");
 
     servant.Destroy();
   }
