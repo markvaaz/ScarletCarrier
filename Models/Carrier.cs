@@ -18,7 +18,8 @@ namespace ScarletCarrier.Models;
 internal class Carrier {
   private const float MaxSpawnDistance = 3f;
   private const float MaxTeleportDistance = 15f;
-  public const float Height = 221f;
+  public const float LegacyHeight = 221f;
+  public const float Height = 215f;
   private const int MaxPositionHistory = 8;
   private const float ServantSpeedMultiplier = 0.95f;
   public const string Id = "__ScarletCarrier1.0__";
@@ -178,10 +179,14 @@ internal class Carrier {
       return;
     }
 
+
     StopFollow();
 
     var customServantPrefab = GetServantAppearance();
     var oldServantPosition = ServantEntity.Position();
+
+    TeleportService.TeleportToPosition(CoffinEntity, oldServantPosition + new float3(0, Height, 0));
+
     var newServant = UnitSpawnerService.ImmediateSpawn(customServantPrefab, oldServantPosition, 0f, 0f, owner: Owner.CharacterEntity, lifeTime: MaxDays);
 
     var inventoryItems = InventoryService.GetInventoryItems(ServantEntity);
@@ -324,6 +329,7 @@ internal class Carrier {
   public void TeleportToPosition(float3 position) {
     if (Entity.Null.Equals(ServantEntity) || !ServantEntity.Exists()) return;
     TeleportService.TeleportToPosition(ServantEntity, position);
+    TeleportService.TeleportToPosition(CoffinEntity, position + new float3(0, Height, 0));
   }
 
   public void Hide() {
@@ -354,6 +360,7 @@ internal class Carrier {
 
     if (distanceToPlayer > MaxTeleportDistance || heightDifference > 4f) {
       TeleportService.TeleportToPosition(ServantEntity, playerPos);
+      TeleportService.TeleportToPosition(CoffinEntity, playerPos + new float3(0, Height, 0));
       return;
     }
 
@@ -375,6 +382,8 @@ internal class Carrier {
     ServantEntity.With((ref Movement movement) => {
       movement.Speed = new ModifiableFloat(playerSpeed * ServantSpeedMultiplier);
     });
+
+    TeleportService.TeleportToPosition(CoffinEntity, ServantEntity.Position() + new float3(0, Height, 0));
   }
 
   private void SetSeekingPosition(float3 targetPos) {
