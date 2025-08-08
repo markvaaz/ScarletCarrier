@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.2] - 2025-08-08
+
+### Fixed
+- **Critical Bug Fix**: Fixed issue where new carriers were being incorrectly identified as legacy carriers and deleted
+- **Coffin-Servant Synchronization**: Improved positioning synchronization between carriers and their coffins during follow mode and appearance changes
+  - Coffin now repositioned proactively during follow movement to prevent desynchronization
+  - Fixed timing issue in appearance swap that could cause temporary position mismatch
+
 ## [1.0.1] - 2025-08-06
 
 ### Added
