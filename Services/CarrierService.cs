@@ -86,6 +86,12 @@ internal static class CarrierService {
       if (player == null) continue;
 
       var servant = entity.Read<ServantCoffinstation>().ConnectedServant._Entity;
+
+      if (!servant.Exists()) {
+        entity.Destroy();
+        continue;
+      }
+
       var carrier = new Carrier(entity, servant, player);
 
       Carriers[player.PlatformId] = carrier;
