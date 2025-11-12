@@ -3,7 +3,6 @@ using ProjectM;
 using ProjectM.Gameplay.Systems;
 using ProjectM.Shared;
 using ScarletCarrier.Models;
-using ScarletCarrier.Services;
 using ScarletCore;
 using ScarletCore.Services;
 using Stunlock.Core;
@@ -35,11 +34,14 @@ public static class InteractPatch {
 
       if (id != Carrier.Id) continue;
 
+      if (!servant.Has<Follower>()) continue;
+
       var player = abilityOwner.GetPlayerData();
+      var owner = servant.Read<Follower>().Followed._Value;
 
-      var carrier = CarrierService.GetCarrier(player.PlatformId);
+      if (player.IsAdmin) continue;
 
-      if (carrier == null || servant != carrier.ServantEntity) {
+      if (owner != player.UserEntity && owner != player.CharacterEntity) {
         BuffService.TryRemoveBuff(abilityOwner, CarrierInteractAbility);
       }
     }

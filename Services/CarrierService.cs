@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using ProjectM;
 using ScarletCore;
-using ScarletCore.Data;
 using ScarletCore.Services;
 using ScarletCore.Systems;
 using ScarletCore.Utils;
@@ -9,9 +8,7 @@ using ScarletCarrier.Models;
 using Stunlock.Core;
 using Unity.Collections;
 using Unity.Entities;
-using Unity.Mathematics;
 using Unity.Transforms;
-using System;
 
 namespace ScarletCarrier.Services;
 
@@ -70,33 +67,39 @@ internal static class CarrierService {
   public const string CustomAppearances = "CustomAppearances";
 
   public static void Initialize() {
-    ClearAllLegacy();
-
     var query = GameSystems.EntityManager.CreateEntityQuery(new EntityQueryDesc {
-      All = new[] { ComponentType.ReadOnly<ServantCoffinstation>() },
-      Options = EntityQueryOptions.IncludeDisabledEntities
+      All = new[] { ComponentType.ReadOnly<ServantData>() },
+      Options = EntityQueryOptions.IncludeDisabled
     }).ToEntityArray(Allocator.Temp);
 
-    foreach (var entity in query) {
-      if (entity.IsNull() || !entity.Exists()) continue;
-      if (!entity.Has<ServantCoffinstation>() || !entity.Has<NameableInteractable>() || !entity.Has<EntityOwner>()) continue;
-      var owner = entity.Read<EntityOwner>().Owner;
+    foreach (var servant in query) {
+      if (servant.IsNull() || !servant.Exists()) continue;
+      if (!servant.Has<ServantData>() || !servant.Has<NameableInteractable>() || !servant.Has<EntityOwner>()) continue;
+      if (!servant.Has<NameableInteractable>() || servant.Read<NameableInteractable>().Name.Value != Carrier.Id) continue;
+      var owner = servant.Read<EntityOwner>().Owner;
       var player = owner.GetPlayerData();
 
       if (player == null) continue;
 
-      var servant = entity.Read<ServantCoffinstation>().ConnectedServant._Entity;
+      var coffin = servant.Read<ServantConnectedCoffin>().CoffinEntity._Entity;
 
-      if (!servant.Exists()) {
-        entity.Destroy();
+      if (!coffin.Exists()) {
+        Log.Info($"Found orphaned servant for player {player.Name} ({player.PlatformId}), recreating coffin...");
+
+        // Create carrier with orphaned servant and recreate coffin
+        var carrier = new Carrier(Entity.Null, servant, player);
+        carrier.RecreateCoffin();
+
+        Carriers[player.PlatformId] = carrier;
+        carrier.Hide();
         continue;
       }
 
-      var carrier = new Carrier(entity, servant, player);
+      var validCarrier = new Carrier(coffin, servant, player);
 
-      Carriers[player.PlatformId] = carrier;
+      Carriers[player.PlatformId] = validCarrier;
 
-      carrier.Hide();
+      validCarrier.Hide();
     }
   }
 
@@ -114,13 +117,31 @@ internal static class CarrierService {
       return;
     }
 
-    // Just in case the lifetime has expired or the entities are missing (extremely unlikely)
-    if (!carrier.ServantEntity.Exists() || !carrier.CoffinEntity.Exists()) {
+    // Check if entities are missing and handle accordingly
+    if (!carrier.ServantEntity.Exists() && !carrier.CoffinEntity.Exists()) {
+      // Both are missing - create new carrier
+      Log.Info($"Both servant and coffin missing for player {playerData.Name}, creating new carrier.");
+      Carriers.Remove(playerData.PlatformId);
+      carrier = new(playerData);
+      carrier.Create();
+      return;
+    } else if (!carrier.CoffinEntity.Exists() && carrier.ServantEntity.Exists()) {
+      // Only coffin is missing - recreate it
+      Log.Info($"Coffin missing for player {playerData.Name}, recreating coffin...");
+      carrier.RecreateCoffin();
+    } else if (!carrier.ServantEntity.Exists() && carrier.CoffinEntity.Exists()) {
+      // Only servant is missing - this shouldn't happen, but recreate both
+      Log.Warning($"Servant missing but coffin exists for player {playerData.Name}, recreating both...");
       Carriers.Remove(playerData.PlatformId);
       carrier = new(playerData);
       carrier.Create();
       return;
     }
+
+    InventoryService.ModifyInventorySize(carrier.ServantEntity, 27);
+
+    // Ensure entities are enabled before calling
+    carrier.EnsureEntitiesEnabled();
 
     carrier.Call();
 
@@ -134,16 +155,34 @@ internal static class CarrierService {
       return;
     }
 
-    // Just in case the lifetime has expired or the entities are missing (extremely unlikely)
-    if (!carrier.ServantEntity.Exists() || !carrier.CoffinEntity.Exists()) {
+    // Check if entities are missing and handle accordingly
+    if (!carrier.ServantEntity.Exists() && !carrier.CoffinEntity.Exists()) {
+      // Both are missing - create new carrier
+      Log.Info($"Both servant and coffin missing for player {playerData.Name}, creating new carrier for dismiss.");
       Carriers.Remove(playerData.PlatformId);
       carrier = new(playerData);
       carrier.Create();
-      return;
+    } else if (!carrier.CoffinEntity.Exists() && carrier.ServantEntity.Exists()) {
+      // Only coffin is missing - recreate it
+      Log.Info($"Coffin missing for player {playerData.Name}, recreating coffin for dismiss...");
+      carrier.RecreateCoffin();
+    } else if (!carrier.ServantEntity.Exists() && carrier.CoffinEntity.Exists()) {
+      // Only servant is missing - this shouldn't happen, but recreate both
+      Log.Warning($"Servant missing but coffin exists for player {playerData.Name}, recreating both for dismiss...");
+      Carriers.Remove(playerData.PlatformId);
+      carrier = new(playerData);
+      carrier.Create();
     }
 
     carrier.Dismiss();
   }
+
+  public static void RemoveCarrier(ulong platformId) {
+    if (HasServant(platformId)) {
+      Carriers.Remove(platformId);
+    }
+  }
+
   public static Carrier GetCarrier(ulong platformId) {
     if (Carriers.TryGetValue(platformId, out var carrier) && carrier.IsValid()) {
       return carrier;
@@ -180,7 +219,7 @@ internal static class CarrierService {
   public static void ClearAllLegacy() {
     var query = GameSystems.EntityManager.CreateEntityQuery(new EntityQueryDesc {
       All = new[] { ComponentType.ReadOnly<ServantCoffinstation>() },
-      Options = EntityQueryOptions.IncludeDisabledEntities
+      Options = EntityQueryOptions.IncludeDisabled
     }).ToEntityArray(Allocator.Temp);
 
     foreach (var coffin in query) {

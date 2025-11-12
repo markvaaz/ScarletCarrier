@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.1.0] - 2025-11-12
+
+### Added
+- **Enhanced Admin Command System**: Expanded administrative tools for carrier management and troubleshooting
+  - `.carrier forceremove` / `.car fr` - Permanently removes any carrier by aiming at it (destroys entity and coffin)
+  - `.carrier callevery <playername>` / `.car ce <playername>` - Summons all carriers belonging to a specific player to admin location
+  - `.carrier callorphans` / `.car co` - Summons all orphaned carriers (disconnected from coffins) to admin location
+  - `.carrier removeallcarriersfromplayer <playername>` - Permanently removes all carriers from a player and transfers items back
+  - `.carrier forceenableinteract` / `.car fei` - Forces interaction to be enabled on carriers by aiming at them
+  - `.carrier forceaddteam` / `.car fat` - Forces carriers to be added to their owner's team by aiming at them
+  - `.carrier forceaccess` / `.car fa` - Sets admin access level for carrier interaction by aiming at them
+
+### Improved
+- **Troubleshooting System**: New admin commands specifically designed for resolving bugged carriers
+- **Documentation**: Updated README.md with comprehensive command documentation organized by functionality
+- **Admin Tools**: Enhanced carrier management capabilities for server administrators
+
 ## [1.0.2] - 2025-08-08
 
 ### Fixed

@@ -1,4 +1,4 @@
-# The update 0.7.0+ **REQUIRES** the latest version of ScarletCore, so make sure to update it as well.
+# The update 1.1.0+ **REQUIRES** the latest version of ScarletCore, so make sure to update it as well.
 
 # ScarletCarrier
 
@@ -50,9 +50,24 @@ When you summon a carrier, your personal servant appears and can store **any ite
 * `.carrier toggle emotes` / `.car te` - Toggles emote controls on/off for your carrier
 
 ### Admin Commands
+
+#### Carrier Management
 * `.carrier move` / `.car m` - Allows admins to move any carrier by aiming at it and clicking to place
 * `.carrier forcedismiss` / `.car fd` - Allows admins to forcefully dismiss any carrier by aiming at it
 * `.carrier forcedismiss <playername>` / `.car fd <playername>` - Allows admins to forcefully dismiss a specific player's carrier by name
+* `.carrier forceremove` / `.car fr` - Permanently removes any carrier by aiming at it (destroys entity and coffin)
+
+#### Troubleshooting Commands
+*These commands exist only for cases where a carrier has bugged and needs to be removed by the server administrator*
+
+* `.carrier callevery <playername>` / `.car ce <playername>` - Summons all carriers belonging to a specific player to your location
+* `.carrier callorphans` / `.car co` - Summons all orphaned carriers (carriers disconnected from their coffins) to your location
+* `.carrier removeallcarriersfromplayer <playername>` - Permanently removes all carriers from a specific player
+
+#### Technical Fix Commands
+* `.carrier forceenableinteract` / `.car fei` - Forces interaction to be enabled on any carrier by aiming at it
+* `.carrier forceaddteam` / `.car fat` - Forces a carrier to be added to its owner's team by aiming at it
+* `.carrier forceaccess` / `.car fa` - Sets admin access level for interaction with any carrier by aiming at it
 
 ### Emote Controls
 

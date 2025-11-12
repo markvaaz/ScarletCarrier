@@ -3,20 +3,20 @@
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>ScarletCarrier</AssemblyName>
     <Description>Scarlet Carrier</Description>
-    <Version>1.0.2</Version>
+    <Version>1.1.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
     <RootNamespace>ScarletCarrier</RootNamespace>
     <PackageId>ScarletCarrier</PackageId>
-    <AssemblyVersion>1.0.2.0</AssemblyVersion>
-    <FileVersion>1.0.2.0</FileVersion>
+    <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <FileVersion>1.1.0.0</FileVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.691" IncludeAssets="compile" />
-    <PackageReference Include="BepInEx.Core" Version="6.0.0-be.691" IncludeAssets="compile" />
+    <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.733" IncludeAssets="compile" />
+    <PackageReference Include="BepInEx.Core" Version="6.0.0-be.733" IncludeAssets="compile" />
     <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*" />
     <PackageReference Include="VRising.Unhollowed.Client" Version="1.1.*" />
-    <PackageReference Include="ScarletCore" Version="1.*" />
+    <PackageReference Include="ScarletCore" Version="1.3.11" />
     <PackageReference Include="VRising.VampireCommandFramework" Version="0.10.*" />
   </ItemGroup>
 

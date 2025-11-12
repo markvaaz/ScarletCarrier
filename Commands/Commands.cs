@@ -9,6 +9,7 @@ using ScarletCarrier.Models;
 using ScarletCore.Systems;
 using ScarletCore.Data;
 using Unity.Entities;
+using Unity.Collections;
 
 namespace ScarletCarrier.Commands;
 
@@ -173,8 +174,9 @@ public static class CarrierCommands {
     });
 
     ActionScheduler.Delayed(() => {
-      if (!_selectedActions.ContainsKey(playerData)) return;
-      ActionScheduler.CancelAction(_selectedActions[playerData]);
+      if (!_selectedActions.TryGetValue(playerData, out ActionId value)) return;
+      ActionScheduler.CancelAction(value);
+      _selectedActions.Remove(playerData);
     }, 180);
 
     ctx.Reply($"You are now moving the carrier. ~Click to place it~.".Format());
@@ -212,6 +214,31 @@ public static class CarrierCommands {
     ctx.Reply($"Carrier for player ~{player.Name}~ has been dismissed.".FormatSuccess());
   }
 
+  [Command("forceremove", shortHand: "fr", adminOnly: true)]
+  public static void ForceRemoveCommand(ChatCommandContext ctx) {
+    if (!PlayerService.TryGetById(ctx.User.PlatformId, out var playerData)) {
+      ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
+      return;
+    }
+
+    var hoveredEntity = playerData.CharacterEntity.Read<EntityInput>().HoveredEntity;
+    if (!hoveredEntity.Exists()) {
+      ctx.Reply($"Please aim at the carrier you want to move.".FormatError());
+      return;
+    }
+
+    if (!hoveredEntity.Has<ServantData>() || !hoveredEntity.Has<NameableInteractable>() || hoveredEntity.Read<NameableInteractable>().Name.Value != Carrier.Id || !hoveredEntity.Has<EntityOwner>()) {
+      ctx.Reply($"The hovered entity is not a carrier.".FormatError());
+      return;
+    }
+
+    var coffin = hoveredEntity.Read<ServantConnectedCoffin>().CoffinEntity._Entity;
+    if (coffin.Exists()) coffin.Destroy();
+    hoveredEntity.Destroy();
+
+    ctx.Reply($"Carrier removed for player.".FormatSuccess());
+  }
+
   [Command("forcedismiss", shortHand: "fd", adminOnly: true)]
   public static void ForceDismissCommand(ChatCommandContext ctx, string playerName) {
     if (!PlayerService.TryGetByName(playerName, out var playerData)) {
@@ -229,5 +256,180 @@ public static class CarrierCommands {
     carrier.Dismiss();
 
     ctx.Reply($"Carrier for player ~{playerData.Name}~ has been dismissed.".FormatSuccess());
+  }
+
+  [Command("forceenableinteract", shortHand: "fei", adminOnly: true)]
+  public static void ForceEnableInteractCommand(ChatCommandContext ctx) {
+    if (!PlayerService.TryGetById(ctx.User.PlatformId, out var playerData)) {
+      ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
+      return;
+    }
+
+    var hoveredEntity = playerData.CharacterEntity.Read<EntityInput>().HoveredEntity;
+    if (!hoveredEntity.Exists()) {
+      ctx.Reply($"Please aim at the carrier you want to enable interaction for.".FormatError());
+      return;
+    }
+
+    if (!hoveredEntity.Has<ServantData>() || !hoveredEntity.Has<NameableInteractable>() || hoveredEntity.Read<NameableInteractable>().Name.Value != Carrier.Id || !hoveredEntity.Has<EntityOwner>()) {
+      ctx.Reply($"The hovered entity is not a carrier.".FormatError());
+      return;
+    }
+
+    var owner = hoveredEntity.Read<EntityOwner>().Owner;
+    var player = owner.GetPlayerData();
+
+    hoveredEntity.With((ref Interactable interactable) => {
+      interactable.Disabled = false;
+    });
+
+    ctx.Reply($"Interaction enabled for the carrier.".FormatSuccess());
+  }
+
+  [Command("forceaddteam", shortHand: "fat", adminOnly: true)]
+  public static void ForceAddTeamCommand(ChatCommandContext ctx) {
+    if (!PlayerService.TryGetById(ctx.User.PlatformId, out var playerData)) {
+      ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
+      return;
+    }
+
+    var hoveredEntity = playerData.CharacterEntity.Read<EntityInput>().HoveredEntity;
+    if (!hoveredEntity.Exists()) {
+      ctx.Reply($"Please aim at the carrier you want to move.".FormatError());
+      return;
+    }
+
+    if (!hoveredEntity.Has<ServantData>() || !hoveredEntity.Has<NameableInteractable>() || hoveredEntity.Read<NameableInteractable>().Name.Value != Carrier.Id || !hoveredEntity.Has<EntityOwner>()) {
+      ctx.Reply($"The hovered entity is not a carrier.".FormatError());
+      return;
+    }
+
+    var owner = hoveredEntity.Read<EntityOwner>().Owner;
+    var player = owner.GetPlayerData();
+
+    hoveredEntity.SetTeam(player.CharacterEntity);
+
+    ctx.Reply($"Carrier for player ~{playerData.Name}~ has been added to the team.".FormatSuccess());
+  }
+
+  [Command("forceaccess", shortHand: "fa", adminOnly: true)]
+  public static void ForceAccessCommand(ChatCommandContext ctx) {
+    if (!PlayerService.TryGetById(ctx.User.PlatformId, out var playerData)) {
+      ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
+      return;
+    }
+
+    var hoveredEntity = playerData.CharacterEntity.Read<EntityInput>().HoveredEntity;
+    if (!hoveredEntity.Exists()) {
+      ctx.Reply($"Please aim at the carrier you want to move.".FormatError());
+      return;
+    }
+
+    if (!hoveredEntity.Has<ServantData>() || !hoveredEntity.Has<NameableInteractable>() || hoveredEntity.Read<NameableInteractable>().Name.Value != Carrier.Id || !hoveredEntity.Has<EntityOwner>()) {
+      ctx.Reply($"The hovered entity is not a carrier.".FormatError());
+      return;
+    }
+
+    hoveredEntity.SetTeam(playerData.CharacterEntity);
+
+    ctx.Reply($"Interaction access level set to ~Admin~ for the carrier.".FormatSuccess());
+  }
+
+  [Command("callevery", shortHand: "ce", adminOnly: true)]
+  public static void CallEvery(ChatCommandContext ctx, string playerName) {
+    if (!PlayerService.TryGetById(ctx.User.PlatformId, out var playerData)) {
+      ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
+      return;
+    }
+
+    if (!PlayerService.TryGetByName(playerName, out var player)) {
+      ctx.Reply($"Error: Player ~{playerName}~ not found.".Format());
+      return;
+    }
+
+    var query = GameSystems.EntityManager.CreateEntityQuery(new EntityQueryDesc {
+      All = new[] { ComponentType.ReadOnly<ServantData>() },
+      Options = EntityQueryOptions.IncludeDisabled
+    }).ToEntityArray(Allocator.Temp);
+
+    foreach (var entity in query) {
+      if (entity.IsNull() || !entity.Exists()) continue;
+      if (!entity.Has<ServantData>() || !entity.Has<NameableInteractable>() || !entity.Has<EntityOwner>()) continue;
+      var owner = entity.Read<EntityOwner>().Owner;
+
+      if (entity.Read<NameableInteractable>().Name.Value != Carrier.Id) continue;
+
+      if (player.CharacterEntity != owner && player.UserEntity != owner) continue;
+
+      BuffService.TryRemoveBuff(entity, CarrierState.Hidden);
+
+      TeleportService.TeleportToEntity(entity, playerData.CharacterEntity);
+    }
+
+    ctx.Reply($"All carriers for player ~{player.Name}~ have been summoned to you.".Format());
+  }
+
+  [Command("callorphans", shortHand: "co", adminOnly: true)]
+  public static void CallOrphans(ChatCommandContext ctx) {
+    if (!PlayerService.TryGetById(ctx.User.PlatformId, out var playerData)) {
+      ctx.Reply($"Error: Player ~{ctx.User.CharacterName}~ not found.".Format());
+      return;
+    }
+
+    var query = GameSystems.EntityManager.CreateEntityQuery(new EntityQueryDesc {
+      All = new[] { ComponentType.ReadOnly<ServantData>() },
+      Options = EntityQueryOptions.IncludeDisabled
+    }).ToEntityArray(Allocator.Temp);
+
+    foreach (var entity in query) {
+      if (entity.IsNull() || !entity.Exists()) continue;
+      if (!entity.Has<ServantData>() || !entity.Has<NameableInteractable>() || !entity.Has<EntityOwner>()) continue;
+      if (entity.Read<NameableInteractable>().Name.Value != Carrier.Id) continue;
+
+      var coffin = entity.Read<ServantConnectedCoffin>().CoffinEntity._Entity;
+
+      if (!coffin.Exists()) {
+        BuffService.TryRemoveBuff(entity, CarrierState.Hidden);
+        TeleportService.TeleportToEntity(entity, playerData.CharacterEntity);
+        continue;
+      }
+
+      var coffinServant = coffin.Read<ServantCoffinstation>().ConnectedServant._Entity;
+
+      if (coffinServant != entity) {
+        BuffService.TryRemoveBuff(entity, CarrierState.Hidden);
+        TeleportService.TeleportToEntity(entity, playerData.CharacterEntity);
+      }
+    }
+
+    ctx.Reply($"All orphaned carriers have been summoned to you.".Format());
+  }
+
+  [Command("removeallcarriersfromplayer", adminOnly: true)]
+  public static void PullAllItems(ChatCommandContext ctx, string playerName) {
+    if (!PlayerService.TryGetByName(playerName, out var player)) {
+      ctx.Reply($"Error: Player ~{playerName}~ not found.".Format());
+      return;
+    }
+
+    var query = GameSystems.EntityManager.CreateEntityQuery(new EntityQueryDesc {
+      All = new[] { ComponentType.ReadOnly<ServantData>() },
+      Options = EntityQueryOptions.IncludeDisabled
+    }).ToEntityArray(Allocator.Temp);
+
+    foreach (var entity in query) {
+      if (entity.IsNull() || !entity.Exists()) continue;
+      if (!entity.Has<ServantData>() || !entity.Has<NameableInteractable>() || !entity.Has<EntityOwner>()) continue;
+      var owner = entity.Read<EntityOwner>().Owner;
+      if (entity.Read<NameableInteractable>().Name.Value != Carrier.Id) continue;
+      if (player.CharacterEntity != owner && player.UserEntity != owner) continue;
+      var coffin = entity.Read<ServantConnectedCoffin>().CoffinEntity._Entity;
+      if (coffin.Exists()) coffin.Destroy();
+      entity.Destroy();
+    }
+
+    CarrierService.RemoveCarrier(player.PlatformId);
+
+    ctx.Reply($"All items from your carriers have been transferred to you.".Format());
   }
 }

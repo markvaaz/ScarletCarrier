@@ -62,11 +62,25 @@ internal class Carrier {
     BindCoffinServant();
   }
 
+  public void EnsureEntitiesEnabled() {
+    if (ServantEntity.Exists() && ServantEntity.Has<Disabled>()) {
+      ServantEntity.Remove<Disabled>();
+      Log.Info($"Enabled disabled servant entity for player {Owner.Name}");
+    }
+
+    if (CoffinEntity.Exists() && CoffinEntity.Has<Disabled>()) {
+      CoffinEntity.Remove<Disabled>();
+      Log.Info($"Enabled disabled coffin entity for player {Owner.Name}");
+    }
+  }
+
   public void Call() {
     if (Busy) return;
     SetAsBusy();
     ActionScheduler.Delayed(() => Busy = false, BusyDuration);
     SetName(Owner.Name);
+
+    EnsureEntitiesEnabled();
 
     if (BuffService.HasBuff(ServantEntity, CarrierState.Hidden)) {
       BuffService.TryRemoveBuff(ServantEntity, CarrierState.Hidden);
@@ -146,7 +160,7 @@ internal class Carrier {
   }
 
   private void CreateCoffin() {
-    CoffinEntity = UnitSpawnerService.ImmediateSpawn(CoffinPrefab, Owner.Position + new float3(0, Height, 0), owner: Owner.CharacterEntity, lifeTime: MaxDays);
+    CoffinEntity = SpawnerService.ImmediateSpawn(CoffinPrefab, Owner.Position + new float3(0, Height, 0), owner: Owner.CharacterEntity, lifeTime: MaxDays);
     CoffinEntity.AddWith((ref NameableInteractable nameable) => {
       nameable.Name = new FixedString64Bytes(Id);
     });
@@ -156,10 +170,38 @@ internal class Carrier {
     CoffinEntity.SetTeam(Owner.CharacterEntity);
   }
 
+  public void RecreateCoffin() {
+    if (CoffinEntity.Exists()) {
+      Log.Warning($"Attempted to recreate coffin that still exists for player {Owner.Name}");
+      return;
+    }
+
+    Log.Info($"Recreating missing coffin for player {Owner.Name} ({Owner.PlatformId})");
+
+    var servantPosition = ServantEntity.Position();
+    CoffinEntity = SpawnerService.ImmediateSpawn(CoffinPrefab, servantPosition + new float3(0, Height, 0), owner: Owner.CharacterEntity, lifeTime: MaxDays);
+
+    CoffinEntity.AddWith((ref NameableInteractable nameable) => {
+      nameable.Name = new FixedString64Bytes(Id);
+    });
+    CoffinEntity.AddWith((ref EntityOwner owner) => {
+      owner.Owner = Owner.CharacterEntity;
+    });
+    CoffinEntity.SetTeam(Owner.CharacterEntity);
+
+    BindCoffinServant();
+    RemoveDisableComponents(CoffinEntity);
+
+    // Ensure entities are not disabled after recreation
+    EnsureEntitiesEnabled();
+
+    ResetLifeTime();
+  }
+
   private void CreateServant() {
     var customServantPrefab = GetServantAppearance();
 
-    ServantEntity = UnitSpawnerService.ImmediateSpawn(customServantPrefab, Owner.Position, owner: Owner.CharacterEntity, lifeTime: MaxDays);
+    ServantEntity = SpawnerService.ImmediateSpawn(customServantPrefab, Owner.Position, owner: Owner.CharacterEntity, lifeTime: MaxDays);
     ConfigureServant();
   }
 
@@ -186,7 +228,7 @@ internal class Carrier {
 
     TeleportService.TeleportToPosition(CoffinEntity, oldServantPosition + new float3(0, Height, 0));
 
-    var newServant = UnitSpawnerService.ImmediateSpawn(customServantPrefab, oldServantPosition, 0f, 0f, owner: Owner.CharacterEntity, lifeTime: MaxDays);
+    var newServant = SpawnerService.ImmediateSpawn(customServantPrefab, oldServantPosition, 0f, 0f, owner: Owner.CharacterEntity, lifeTime: MaxDays);
 
     var inventoryItems = InventoryService.GetInventoryItems(ServantEntity);
     var oldServantEquipment = ServantEntity.Read<ServantEquipment>();
@@ -216,6 +258,10 @@ internal class Carrier {
   }
 
   private void ConfigureServant() {
+    ServantEntity.AddWith((ref Immortal immortal) => {
+      immortal.IsImmortal = true;
+    });
+
     ServantEntity.AddWith((ref NameableInteractable nameable) => {
       nameable.Name = new FixedString64Bytes(Id);
     });

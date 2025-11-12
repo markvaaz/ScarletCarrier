@@ -35,16 +35,13 @@ public class Plugin : BasePlugin {
     Database = new Database(MyPluginInfo.PLUGIN_GUID);
     Settings = new Settings(MyPluginInfo.PLUGIN_GUID, Instance);
 
-    if (GameSystems.Initialized) OnInitialize(null, null);
-    else EventManager.OnInitialize += OnInitialize;
+    GameSystems.OnInitialize(OnInitialize);
 
-    EventManager.OnUserDisconnected += (_, userEvent) => {
-      var player = userEvent.Player;
-
+    EventManager.On(PlayerEvents.PlayerLeft, (player) => {
       if (CarrierService.HasServant(player.PlatformId)) {
         CarrierService.Dismiss(player.PlatformId);
       }
-    };
+    });
 
     LoadSettings();
     CommandRegistry.RegisterAll();
@@ -58,7 +55,7 @@ public class Plugin : BasePlugin {
     return true;
   }
 
-  public static void OnInitialize(object _, object __) {
+  public static void OnInitialize() {
     LogInstance.LogInfo("Removing carrier entities...");
     CarrierService.Initialize();
     CleanupService.ClearEntitiesInRadius(new float2(0, 0), 15);
