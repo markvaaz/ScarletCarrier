@@ -3,6 +3,7 @@ using ProjectM;
 using ProjectM.Network;
 using ScarletCarrier.Services;
 using ScarletCore;
+using ScarletCore.Systems;
 using Stunlock.Core;
 using Unity.Collections;
 
@@ -13,6 +14,7 @@ public static class AbilityPatch {
   private static readonly PrefabGUID FlightAbilityGuid = new(-104327922);
   [HarmonyPrefix]
   static void OnUpdatePrefix(AbilityCastStarted_SetupAbilityTargetSystem_Shared __instance) {
+    if (!GameSystems.Initialized) return;
     var castStartedEvents = __instance.EntityQueries[0].ToComponentDataArray<AbilityCastStartedEvent>(Allocator.Temp);
 
     try {

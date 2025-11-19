@@ -9,6 +9,7 @@ using ScarletCarrier.Services;
 using System.Collections.Generic;
 using Stunlock.Core;
 using System;
+using ScarletCore.Systems;
 
 namespace ScarletCarrier.Patches;
 
@@ -22,6 +23,7 @@ public static class EmoteSystemPatch {
 
   [HarmonyPrefix]
   static void OnUpdatePrefix(EmoteSystem __instance) {
+    if (!GameSystems.Initialized) return;
     var entities = __instance._Query.ToEntityArray(Allocator.Temp);
 
     try {

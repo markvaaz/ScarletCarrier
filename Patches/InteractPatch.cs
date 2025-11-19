@@ -5,6 +5,7 @@ using ProjectM.Shared;
 using ScarletCarrier.Models;
 using ScarletCore;
 using ScarletCore.Services;
+using ScarletCore.Systems;
 using Stunlock.Core;
 using Unity.Collections;
 using Unity.Entities;
@@ -16,6 +17,7 @@ public static class InteractPatch {
   private static readonly PrefabGUID CarrierInteractAbility = new(-127008514);
   [HarmonyPrefix]
   public static void Prefix(InteractValidateAndStopSystemServer __instance) {
+    if (!GameSystems.Initialized) return;
     var query = __instance.__query_195794971_3.ToEntityArray(Allocator.Temp);
 
     foreach (var entity in query) {
