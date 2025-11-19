@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.1] - 2025-11-12
+
+### Fixed
+- **Initialization Check**: Added checks in Harmony patches to ensure GameSystems are initialized before accessing
+
 ## [1.1.0] - 2025-11-12
 
 ### Added
